@@ -1,0 +1,344 @@
+"""Persistent per-trade learning records and conservative cohort summaries."""
+from __future__ import annotations
+
+import json
+import os
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+import db_store
+from trade_learning import build_learning_report, sync_settled_trade_learning, _walk_forward_context_validation
+
+
+def _new_db(tmp: str):
+    conn = db_store.connect_database()
+    db_store.ensure_schema(conn)
+    return conn
+
+
+def _insert_linked_trade(conn, *, trade_id_ticker="KXBTC15M-LEARN", direction="UP", outcome="UP", pnl=28.0,
+                         entry=70.0, bias="UP", evidence=78, volume=True, momentum=1, chase=False, settled=True):
+    stamp = "2026-10-23T00:00:00+00:00"
+    features = {
+        "chart_trend_at_decision": {"candidate_bias": bias, "evidence_score": evidence, "age_seconds": 2.0,
+                                     "timeframes": {"1m": "bullish", "5m": "bullish", "15m": "mixed"}},
+        "strategies": {
+            "momentum": {"direction": momentum, "rsi_1m": 58.5},
+            "volume_confirmation": {"confirmed": volume},
+            "market_structure": {"direction": 1, "label": "higher highs and higher lows"},
+            "box_theory": {"state": "bullish_breakout", "direction": 1},
+            "volatility": {"chase_warning": chase, "three_candle_abs_move_pct": 0.02},
+        },
+        "reasons": ["Trend and indicator evaluated together."],
+        "warnings": ["Evidence score is not a calibrated probability."],
+        "external_signal": {"age_seconds": 12.0},
+        "decision_status": "paper_opened",
+    }
+    sig = conn.execute(
+        """INSERT INTO signal_log
+           (created_at,market_ticker,direction,score,btc_price,strike_price,seconds_remaining,max_entry_cents,
+            payload_json,decision_status,proposed_direction,entry_ask_cents,spread_cents,trend_bias,
+            trend_evidence_score,trend_snapshot_age_seconds)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (stamp, trade_id_ticker, f"BUY_{direction}", 72, 81800.0, 81750.0, 600, 80.0,
+         json.dumps(features), "paper_opened", direction, entry, 2.0, bias, evidence, 2.0),
+    )
+    signal_id = sig.lastrowid
+    conn.execute(
+        """INSERT INTO paper_trades
+           (created_at,settled_at,market_ticker,direction,contracts,entry_cents,fee_cents_per_contract,
+            outcome,pnl_cents,entry_signal_source,entry_signal_log_id,entry_signal_score,entry_btc_price,timeframe)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (stamp, stamp if settled else None, trade_id_ticker, direction, 1, entry, 2.0, outcome,
+         pnl if settled else None, "hybrid", signal_id, 72, 81800.0, "1m"),
+    )
+    conn.commit()
+    return signal_id
+
+
+def test_settled_trade_learning_captures_features_and_is_idempotent():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "learning.sqlite3")}):
+            conn = _new_db(tmp)
+            try:
+                _insert_linked_trade(conn, direction="UP", outcome="UP", pnl=28.0, bias="UP", volume=True, momentum=1)
+                first = sync_settled_trade_learning(conn)
+                second = sync_settled_trade_learning(conn)
+                assert first == 1
+                assert second == 0
+                row = conn.execute(
+                    "SELECT trade_outcome,pnl_result,pnl_cents,trend_alignment,entry_price_bucket,feature_snapshot_json,review_json FROM trade_learning"
+                ).fetchone()
+                assert row[0] == "UP"
+                assert row[1] == "profit"
+                assert row[2] == 28.0
+                assert row[3] == "aligned"
+                assert row[4] == "65–79¢"
+                features = json.loads(row[5])
+                review = json.loads(row[6])
+                assert features["volume_confirmation"] == "yes"
+                assert features["momentum_alignment"] == "aligned"
+                assert features["day_type_utc"] == "weekday"
+                assert features["weekday_utc"] == "Friday"
+                assert features["utc_time_bucket"] == "00:00–05:59 UTC"
+                assert features["trend_regime"] == "breakout_trend"
+                assert features["volatility_regime"] == "not_flagged"
+                assert review["result"] == "profit"
+                assert review["directional_settlement_hit"] is True
+                assert "never changes strategy rules" in review["interpretation_note"]
+                count = conn.execute("SELECT COUNT(*) FROM trade_learning").fetchone()[0]
+                assert count == 1
+            finally:
+                conn.close()
+
+
+def test_learning_classifies_realized_pnl_separately_from_exit_reason():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "exit-reason.sqlite3")}):
+            conn = _new_db(tmp)
+            try:
+                _insert_linked_trade(conn, trade_id_ticker="KXBTC15M-STOP", direction="DOWN",
+                                     outcome="TREND_STOP_LOSS", pnl=12.8, bias="UP", volume=False, momentum=1)
+                sync_settled_trade_learning(conn)
+                row = conn.execute("SELECT trade_outcome,pnl_result,trend_alignment,momentum_alignment,review_json FROM trade_learning").fetchone()
+                assert row[:4] == ("TREND_STOP_LOSS", "profit", "opposed", "opposed")
+                review = json.loads(row[4])
+                assert review["directional_settlement_hit"] is None
+                report = build_learning_report(conn)
+                assert report["summary"]["profitable"] == 1
+                assert report["summary"]["unprofitable"] == 0
+                assert report["automatic_strategy_changes_enabled"] is True
+            finally:
+                conn.close()
+
+
+def test_unsettled_trade_is_not_learned_until_result_exists():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "unsettled.sqlite3")}):
+            conn = _new_db(tmp)
+            try:
+                _insert_linked_trade(conn, trade_id_ticker="KXBTC15M-OPEN", settled=False)
+                assert sync_settled_trade_learning(conn) == 0
+                assert conn.execute("SELECT COUNT(*) FROM trade_learning").fetchone()[0] == 0
+                conn.execute("UPDATE paper_trades SET settled_at=?, outcome='UP', pnl_cents=18 WHERE market_ticker=?",
+                             ("2026-10-23T00:15:00+00:00", "KXBTC15M-OPEN"))
+                conn.commit()
+                assert sync_settled_trade_learning(conn) == 1
+                report = build_learning_report(conn)
+                assert report["summary"]["trades_reviewed"] == 1
+                assert report["latest_review"]["pnl_result"] == "profit"
+            finally:
+                conn.close()
+
+
+def test_learning_report_exposes_cohorts_and_bounded_adaptive_policy():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "cohorts.sqlite3")}):
+            conn = _new_db(tmp)
+            try:
+                _insert_linked_trade(conn, trade_id_ticker="KXBTC15M-A", direction="UP", outcome="UP", pnl=28, bias="UP")
+                _insert_linked_trade(conn, trade_id_ticker="KXBTC15M-B", direction="DOWN", outcome="TREND_STOP_LOSS", pnl=-35, bias="UP", volume=False, momentum=1, chase=True)
+                sync_settled_trade_learning(conn)
+                report = build_learning_report(conn)
+                assert report["mode"] == "SIMULATION_ONLY"
+                assert report["automatic_strategy_changes_enabled"] is True
+                assert report["adaptive_policy"]["effective_target_cents"] == 80.0
+                assert report["adaptive_policy"]["status"] == "collecting_sample"
+                assert len(report["recent_reviews"]) == 2
+                assert report["summary"]["trades_reviewed"] == 2
+                assert report["summary"]["profitable"] == 1
+                assert report["summary"]["unprofitable"] == 1
+                assert report["cohorts"]["trend_alignment"]
+                assert report["cohorts"]["day_type_utc"]
+                assert report["cohorts"]["weekday_utc"]
+                assert report["cohorts"]["utc_time_bucket"]
+                assert report["cohorts"]["trend_regime"]
+                assert report["cohorts"]["volatility_regime"]
+                assert report["signal_weight_adjustment_enabled"] is False
+                assert "out-of-sample validation" in report["phase1_context_policy"]
+                assert report["research_notes"]
+                assert "preferred entry target" in report["policy"]
+                assert "never loosens" in report["policy"]
+                assert isinstance(report["policy_change_history"], list)
+                assert report["walk_forward_validation"]["status"] == "insufficient_sample"
+            finally:
+                conn.close()
+
+
+def test_legacy_settled_trade_uses_external_signal_link_when_signal_log_id_missing():
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "legacy-link.sqlite3")}):
+            conn = _new_db(tmp)
+            try:
+                stamp = "2026-10-23T00:00:00+00:00"
+                payload = {
+                    "chart_trend_at_decision": {"candidate_bias": "DOWN", "evidence_score": 74, "age_seconds": 3},
+                    "strategies": {"momentum": {"direction": -1}, "volume_confirmation": {"confirmed": True}},
+                    "reasons": ["Linked through prior external alert id."],
+                    "external_signal": {"id": 901, "age_seconds": 5},
+                }
+                conn.execute(
+                    """INSERT INTO signal_log
+                       (created_at,market_ticker,direction,score,btc_price,strike_price,seconds_remaining,
+                        max_entry_cents,payload_json,external_signal_id,decision_status,proposed_direction,
+                        entry_ask_cents,trend_bias,trend_evidence_score)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (stamp, "KXBTC15M-LEGACY", "BUY_DOWN", 71, 81000, 81020, 400, 80,
+                     json.dumps(payload), 901, "paper_opened", "DOWN", 72, "DOWN", 74),
+                )
+                conn.execute(
+                    """INSERT INTO paper_trades
+                       (created_at,settled_at,market_ticker,direction,contracts,entry_cents,fee_cents_per_contract,
+                        outcome,pnl_cents,entry_signal_source,external_signal_id,entry_signal_score,entry_btc_price,timeframe)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (stamp, stamp, "KXBTC15M-LEGACY", "DOWN", 1, 72, 2, "DOWN", 26,
+                     "hybrid", 901, 0, 81000, "1m"),
+                )
+                conn.commit()
+                assert sync_settled_trade_learning(conn) == 1
+                row = conn.execute("SELECT trend_alignment,feature_snapshot_json FROM trade_learning").fetchone()
+                assert row[0] == "aligned"
+                features = json.loads(row[1])
+                assert features["entry_reasons"] == ["Linked through prior external alert id."]
+                assert features["trend_evidence_score"] == 74
+            finally:
+                conn.close()
+
+
+
+def _insert_learning_observation(conn, trade_id: int, *, entry: float = 78.0, pnl: float = -3.0):
+    stamp = f"2026-10-23T00:{trade_id % 60:02d}:00+00:00"
+    conn.execute(
+        """INSERT INTO trade_learning
+           (trade_id,created_at,settled_at,market_ticker,direction,contracts,entry_cents,
+            fee_cents_per_contract,trade_outcome,pnl_result,pnl_cents,signal_source,
+            feature_snapshot_json,review_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (trade_id, stamp, stamp, f"KXBTC15M-POLICY-{trade_id}", "UP", 1, entry, 2.0,
+         "DOWN" if pnl < 0 else "UP", "loss" if pnl < 0 else "profit", pnl, "hybrid", "{}", "{}"),
+    )
+    conn.commit()
+
+
+def test_adaptive_policy_tightens_only_after_minimum_negative_price_cohort_and_not_every_cycle():
+    from trade_learning import update_adaptive_entry_policy
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "adaptive.sqlite3")}, clear=False):
+            conn = _new_db(tmp)
+            try:
+                for trade_id in range(1, 20):
+                    _insert_learning_observation(conn, trade_id, entry=78.0, pnl=-3.0)
+                first = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert first["effective_target_cents"] == 80.0
+                assert first["status"] == "collecting_sample"
+
+                _insert_learning_observation(conn, 20, entry=78.0, pnl=-3.0)
+                second = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert second["status"] == "tightened"
+                assert second["effective_target_cents"] == 79.0
+                assert second["adjustment_count"] == 1
+                assert second["hard_cap_cents"] == 92.0
+
+                same_cycle = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert same_cycle["effective_target_cents"] == 79.0
+                assert same_cycle["adjustment_count"] == 1
+
+                for trade_id in range(21, 31):
+                    _insert_learning_observation(conn, trade_id, entry=78.0, pnl=-3.0)
+                next_review = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert next_review["effective_target_cents"] == 78.0
+                assert next_review["adjustment_count"] == 2
+                history = conn.execute(
+                    "SELECT previous_target_cents,new_target_cents,event_type FROM adaptive_policy_history ORDER BY id"
+                ).fetchall()
+                assert history == [(80.0, 79.0, "automatic_tightening"), (79.0, 78.0, "automatic_tightening")]
+                # Current state is compact; append-only history makes each change auditable.
+                report = build_learning_report(conn)
+                assert len(report["policy_change_history"]) == 2
+                assert report["policy_change_history"][0]["new_target_cents"] == 78.0
+            finally:
+                conn.close()
+
+
+def test_adaptive_policy_does_not_loosen_and_never_changes_hard_cap_or_dollar_limits():
+    from trade_learning import update_adaptive_entry_policy
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "adaptive-bounds.sqlite3")}, clear=False):
+            conn = _new_db(tmp)
+            try:
+                for trade_id in range(1, 21):
+                    _insert_learning_observation(conn, trade_id, entry=78.0, pnl=-3.0)
+                first = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert first["effective_target_cents"] == 79.0
+                # A later higher environment target must not override the persisted tighter target.
+                changed_env = update_adaptive_entry_policy(conn, configured_target_cents=82, hard_cap_cents=92)
+                assert changed_env["effective_target_cents"] == 79.0
+                disabled = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92, enabled=False)
+                assert disabled["effective_target_cents"] == 80.0
+                assert disabled["hard_cap_cents"] == 92.0
+            finally:
+                conn.close()
+
+
+def test_historical_backfill_does_not_repeat_adaptive_adjustments_on_same_latest_sample():
+    from trade_learning import update_adaptive_entry_policy
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.dict(os.environ, {"DATABASE_URL": "", "BOT_DB_PATH": str(Path(tmp) / "adaptive-backfill.sqlite3")}, clear=False):
+            conn = _new_db(tmp)
+            try:
+                # Seed the most recent/highest-ID 20 hybrid outcomes, representing
+                # the live sample that first activates the policy.
+                for trade_id in range(81, 101):
+                    _insert_learning_observation(conn, trade_id, entry=78.0, pnl=-3.0)
+                first = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert first["effective_target_cents"] == 79.0
+                assert first["adjustment_count"] == 1
+
+                # Backfill 80 older trade IDs with older settlement timestamps.
+                # This must not look like 80 new live outcomes and must not
+                # repeatedly tighten against an unchanged recent sample.
+                for trade_id in range(1, 81):
+                    stamp = f"2026-10-22T00:{trade_id % 60:02d}:00+00:00"
+                    conn.execute(
+                        """INSERT INTO trade_learning
+                           (trade_id,created_at,settled_at,market_ticker,direction,contracts,entry_cents,
+                            fee_cents_per_contract,trade_outcome,pnl_result,pnl_cents,signal_source,
+                            feature_snapshot_json,review_json)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (trade_id, stamp, stamp, f"KXBTC15M-BACKFILL-{trade_id}", "UP", 1, 78.0, 2.0,
+                         "DOWN", "loss", -3.0, "hybrid", "{}", "{}"),
+                    )
+                conn.commit()
+                after_backfill = update_adaptive_entry_policy(conn, configured_target_cents=80, hard_cap_cents=92)
+                assert after_backfill["effective_target_cents"] == 79.0
+                assert after_backfill["adjustment_count"] == 1
+                assert "No new adaptive review due" in after_backfill["reason"]
+            finally:
+                conn.close()
+
+
+def test_walk_forward_context_validation_requires_sample_and_keeps_weights_unchanged():
+    small = _walk_forward_context_validation([
+        {"pnl_cents": 1.0, "day_type_utc": "weekday", "utc_time_bucket": "12:00–17:59 UTC",
+         "trend_regime": "aligned_trend", "volatility_regime": "not_flagged"}
+        for _ in range(12)
+    ])
+    assert small["status"] == "insufficient_sample"
+    assert small["weight_change_authorized"] is False
+
+    rows = [
+        {"pnl_cents": 2.0, "day_type_utc": "weekday", "utc_time_bucket": "12:00–17:59 UTC",
+         "trend_regime": "aligned_trend", "volatility_regime": "not_flagged"}
+        for _ in range(40)
+    ]
+    review = _walk_forward_context_validation(rows)
+    assert review["status"] == "review_only"
+    assert review["training_trade_count"] == 28
+    assert review["holdout_trade_count"] == 12
+    assert review["tested_cohorts"] >= 1
+    assert review["consistent_cohorts"] == review["tested_cohorts"]
+    assert review["weight_change_authorized"] is False

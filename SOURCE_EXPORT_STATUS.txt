@@ -1,0 +1,7 @@
+SOURCE EXPORT STATUS — 2026-10-26
+
+Full source snapshot: BTC_Bot_Scanner_Autopilot_Fix_2026-10-24.zip (121 entries, saved 2026-10-24).
+Additional patch: btc_bot_recovery_patch.zip (saved 2026-10-26; 8 entries; not integrated into baseline).
+Current GitHub export: BLOCKED. GitHub API returned HTTP 403: "Sorry. Your account was suspended"; the main-branch archive URL returned Not Found.
+Consequently this bundle must not be represented as the exact latest main branch or as containing every change merged/deployed on 2026-10-26.
+No live Kalshi private keys, OpenAI API keys, Render DATABASE_URL, or generated app-secrets file was included.

@@ -1,0 +1,2 @@
+Historical note: psycopg[binary]>=3.2,<4 is already included in requirements.txt.
+Do not install from or append this file separately; requirements.txt is the runtime dependency source of truth.
