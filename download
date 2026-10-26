@@ -1,0 +1,30 @@
+# Local databases contain user-specific paper journal records and must not be committed.
+bot_journal.sqlite3
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Python cache and local test artifacts.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment/secrets files.
+.env
+.env.*
+!.env.example
+
+# Local generated validations, reports, exports, and API key materials.
+validation_soak.log
+validation_soak_result.json
+historical_replay_audit.json
+historical_replay_audit.md
+historical_replay_audit_*.json
+historical_replay_audit_*.md
+btc_bot_historical_replay_export.zip
+*.key
+*.pem
+*.private
+BTC_Bot_Generated_App_Secrets.txt

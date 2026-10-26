@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>BTC Engine | Paper Trading</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#101a2c; --bg2:#152942; --panel:#1c4269; --panel2:#22517c;
+      --panel-deep:#173752; --line:#477ba3; --text:#f4f8ff; --muted:#c8d9eb;
+      --blue:#b9dcff; --green:#6ce6a2; --green-bg:#1a5947; --red:#ff9eaa;
+      --red-bg:#5b2d40; --amber:#ffdb87; --amber-bg:#5a4827;
+      --shadow:0 9px 25px rgba(0,0,0,.19);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(ellipse at 10% 0%,#1b3554 0%,var(--bg) 56%);color:var(--text);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    header{background:linear-gradient(115deg,#164c87 0%,#175477 57%,#174555 100%);border-bottom:1px solid var(--line);padding:18px clamp(14px,4vw,38px)}
+    .wrap{max-width:1260px;margin:0 auto}
+    .brandline{display:flex;gap:12px;align-items:center;min-width:0}
+    .brandmark{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#78c4ff,#5d9de5);color:#102b48;font-size:21px;font-weight:900;box-shadow:inset 0 1px 0 #d3ecff}
+    .brandname{font-weight:850;letter-spacing:.035em;font-size:17px;line-height:1.1}
+    .brandtag{font-size:12px;color:#d5e9f9;margin-top:4px}
+    .header-row{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+    .header-badges{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .top-pill,.badge{display:inline-flex;align-items:center;gap:7px;border:1px solid #5a8db3;border-radius:999px;padding:6px 10px;background:rgba(10,37,63,.28);font-size:11px;font-weight:800;letter-spacing:.035em;white-space:normal}
+    .top-pill::before,.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+    .green{color:var(--green)!important;background:var(--green-bg)!important;border-color:#36765c!important}
+    .red{color:var(--red)!important;background:var(--red-bg)!important;border-color:#8a4555!important}
+    .amber{color:var(--amber)!important;background:var(--amber-bg)!important;border-color:#816538!important}
+    .blue{color:var(--blue)!important;background:#204f79!important;border-color:#3e7099!important}
+    main{max-width:1260px;margin:0 auto;padding:22px clamp(12px,2.8vw,28px) 40px}
+    .intro{margin:14px 0 18px}
+    .eyebrow{font-size:11px;font-weight:850;letter-spacing:.17em;text-transform:uppercase;color:#9acbfa}
+    h1{font-size:clamp(27px,4vw,39px);letter-spacing:-.045em;line-height:1.1;margin:7px 0 8px}
+    h2{font-size:20px;line-height:1.25;letter-spacing:-.025em;margin:0 0 8px}
+    h3{font-size:15px;line-height:1.3;margin:0 0 8px}
+    p{margin:0}
+    .subtitle{color:var(--muted);max-width:80ch}
+    .section{margin-top:17px}
+    .active-position-priority{border-width:2px;border-top-width:4px;scroll-margin-top:14px}
+    .next-signal-panel{margin-top:8px;padding:16px;border:1px solid #5795bf;border-radius:13px;background:linear-gradient(135deg,rgba(17,48,77,.72),rgba(19,66,91,.65))}
+    .next-signal-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:14px;align-items:stretch}
+    .next-signal-title{font-size:clamp(25px,3.4vw,36px);font-weight:950;letter-spacing:-.04em;line-height:1.12;color:var(--amber);margin:8px 0 10px;overflow-wrap:anywhere}
+    .next-signal-copy{font-size:14px;line-height:1.65;color:#e9f3fc;max-width:75ch}
+    .next-reason-panel .reason-list li{font-size:13px;line-height:1.55;padding:10px 11px}
+    .learning-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:12px}
+    .learning-review{border:1px solid rgba(183,214,241,.28);border-radius:11px;padding:13px;background:rgba(13,40,66,.24);min-width:0}
+    .learning-review p{font-size:13px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}
+    @media(max-width:760px){.learning-summary{grid-template-columns:1fr}.next-reason-panel .reason-list li{font-size:13px}}
+    .next-countdown-box{display:flex;flex-direction:column;justify-content:center;min-width:0;border:1px solid rgba(255,219,135,.45);background:rgba(10,35,57,.48);border-radius:12px;padding:15px}
+    .next-countdown-label{font-size:11px;text-transform:uppercase;font-weight:900;letter-spacing:.07em;color:var(--muted)}
+    .next-countdown-value{font-size:clamp(32px,4vw,46px);font-weight:950;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;color:#fff;margin:8px 0}
+    .next-countdown-help{font-size:12px;line-height:1.45;color:var(--muted)}
+    .next-reason-panel{min-width:0;border:1px solid rgba(183,214,241,.22);border-radius:11px;padding:13px;background:rgba(8,30,51,.28)}
+    .next-reason-panel h3{margin:0 0 9px}
+    .next-window-meta{font-size:12px;color:var(--muted);margin-top:12px}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:11px}
+    .section-desc{font-size:13px;color:var(--muted);margin-top:3px;max-width:85ch}
+    .card{min-width:0;background:linear-gradient(145deg,rgba(37,91,137,.98),rgba(25,64,99,.98));border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:var(--shadow)}
+    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+    .card-titleline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+    .card-kicker{color:#d5e6f6;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+    .big-line{font-size:clamp(22px,2.7vw,31px);font-weight:850;letter-spacing:-.035em;line-height:1.15;margin:7px 0 5px;overflow-wrap:anywhere}
+    .metric{font-size:clamp(25px,3.2vw,34px);font-weight:850;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}.small{font-size:12px;color:var(--muted)}
+    .rule{height:1px;background:rgba(185,220,255,.22);margin:12px 0}
+    .rowline{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(185,220,255,.12)}
+    .rowline:last-child{border-bottom:0}
+    .rowline .label{font-size:12px;color:var(--muted)}.rowline .value{text-align:right;font-size:12px;font-weight:750;overflow-wrap:anywhere;max-width:65%}
+    .mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+    .mini{min-width:0;border:1px solid rgba(183,214,241,.28);background:rgba(13,40,66,.24);border-radius:10px;padding:10px 11px}
+    .mini .label{font-size:10px;color:var(--muted);font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+    .mini .value{font-size:16px;font-weight:800;line-height:1.25;margin-top:4px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    .mini .help{font-size:11px;color:var(--muted);margin-top:4px}
+    .accent-green{border-top:3px solid #59df9a}.accent-blue{border-top:3px solid #95baf9}.accent-amber{border-top:3px solid #ffd27e}.accent-red{border-top:3px solid #ff8b9b}
+    .hero{background:linear-gradient(118deg,#20548d 0%,#1e5a7c 56%,#16485f 100%);border-width:2px;padding:19px}
+    .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .hero-title{font-size:clamp(27px,4vw,38px);font-weight:900;letter-spacing:-.045em;line-height:1.1;margin:11px 0 7px}
+    .hero-copy{max-width:90ch;color:#e0eefb}
+    .progress{height:8px;border-radius:999px;background:rgba(8,28,50,.65);overflow:hidden;margin-top:10px;border:1px solid rgba(194,220,244,.15)}
+    .progress>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#73e6a5,#8dd0ff);width:0;transition:width .25s ease}
+    .reason-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+    .reason-list li{padding:8px 10px;border-radius:9px;background:rgba(13,39,65,.22);border:1px solid rgba(178,215,244,.17);font-size:12px;color:#e4effa;overflow-wrap:anywhere}
+    .reason-list li::before{content:"•";color:#9ad1ff;font-weight:900;margin-right:8px}
+    .two-col{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:13px}
+    .strategy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .strategy{min-width:0;border:1px solid rgba(183,214,241,.3);border-radius:11px;padding:12px;background:rgba(13,40,66,.24)}
+    .strategy-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:7px}
+    .strategy-head strong{font-size:13px}
+    .strategy p{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+    .strategy .tag{border-radius:999px;padding:3px 7px;background:#1d5a74;color:#d3edff;font-size:10px;font-weight:800;white-space:nowrap}
+    .notice{background:rgba(18,64,94,.6);border:1px solid #4a92bf;border-radius:10px;padding:11px 12px;color:#e0effc;font-size:12px;margin-top:12px}
+    .notice strong{color:white}
+    .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:rgba(18,51,80,.65)}
+    table{border-collapse:collapse;width:100%;min-width:760px;font-size:12px}
+    th,td{text-align:left;vertical-align:top;padding:10px 10px;border-bottom:1px solid rgba(119,165,201,.23)}
+    th{position:sticky;top:0;background:#18486f;color:#ecf6ff;text-transform:uppercase;font-size:10px;letter-spacing:.06em;font-weight:850;white-space:nowrap}
+    tbody tr:hover{background:rgba(122,181,224,.07)}tbody tr:last-child td{border-bottom:0}
+    td{overflow-wrap:anywhere;color:#e7f1fb}.positive{color:var(--green)!important}.negative{color:var(--red)!important}.warning-text{color:var(--amber)!important}
+    .empty{padding:15px;color:var(--muted);text-align:center}
+    details{border:1px solid var(--line);border-radius:12px;background:rgba(28,72,110,.78);padding:14px 15px}
+    details+details{margin-top:10px}summary{cursor:pointer;font-weight:800;font-size:14px}summary:focus-visible,button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+    .settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:13px}
+    /* Kalshi connection form: deliberately visually distinct, matching the compact
+       dark account-connect flow in the reference while retaining BTC Engine styling. */
+    .credential-setup-card{margin-top:12px;border:1px solid #34363b;border-radius:18px;padding:18px;background:linear-gradient(145deg,#18191c,#202124);color:#f5f5f5;box-shadow:0 12px 28px rgba(0,0,0,.24)}
+    .credential-setup-card .mode-note,.credential-setup-card .small{color:#b8bcc4}
+    .credential-step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;margin:12px 0 16px}
+    .credential-step-number{width:34px;height:34px;border-radius:50%;border:2px solid #ff9a5b;color:#ffad72;display:grid;place-items:center;font-weight:900;font-size:15px}
+    .credential-step-copy{color:#e9e9eb;line-height:1.55;font-size:14px}
+    .credential-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:13px;margin-top:14px}
+    .credential-field label{display:block;font-size:14px;color:#f3f3f4;margin-bottom:6px;font-weight:650}
+    .credential-input,.credential-file{display:block;width:100%;min-width:0;padding:13px 14px;border:1px solid #46484e;border-radius:12px;background:#191a1d;color:#f7f7f8;font:inherit;font-size:14px}
+    .credential-input:focus,.credential-file:focus{outline:2px solid #ff9a5b;outline-offset:2px;border-color:#ff9a5b}
+    .credential-file{padding:10px 12px;min-height:50px}
+    .credential-file::file-selector-button{border:0;background:#eceef1;color:#18191b;border-radius:999px;padding:7px 12px;margin-right:10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+    .credential-ack{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;margin:16px 0 14px;color:#c5c7cc;font-size:13px;line-height:1.6}
+    .credential-ack input{width:18px;height:18px;margin-top:3px;accent-color:#ff8a43}
+    .connect-button{width:100%;min-height:52px;border:0;border-radius:13px;background:#ff873f;color:#21130a;font:inherit;font-weight:850;font-size:16px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.25);transition:filter .15s ease,transform .15s ease}
+    .connect-button:hover{filter:brightness(1.06)}.connect-button:active{transform:translateY(1px)}
+    .connect-button:disabled{opacity:.55;cursor:not-allowed;filter:saturate(.5)}
+    .credential-secondary-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .credential-secondary-actions .mode-button{background:#292b30;border-color:#484b52}
+    .autopilot-control{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:12px 0 14px;padding:14px;border:1px solid rgba(185,220,255,.27);border-radius:12px;background:rgba(7,28,48,.24)}
+    .autopilot-toggle{min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:9px}
+    .autopilot-toggle[aria-pressed="true"]{border-color:#42c59a;background:#124b42;color:#dffff0}
+    .autopilot-toggle[aria-pressed="false"]{border-color:#9d7b48;background:#3c3027;color:#ffe5c8}
+    @media(max-width:620px){.credential-setup-card{padding:14px}.credential-step{grid-template-columns:34px minmax(0,1fr);gap:9px}.credential-step-number{width:30px;height:30px}.credential-ack{font-size:12px}.connect-button{font-size:15px}.autopilot-toggle{width:100%}}
+    .mode-control-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:12px}
+    .mode-selector{display:flex;gap:8px;flex-wrap:wrap}
+    .mode-button{cursor:pointer;border:1px solid #477596;background:#153954;color:#eaf5ff;font:inherit;font-size:12px;font-weight:850;padding:10px 14px;border-radius:10px;min-height:40px}
+    .mode-button[aria-pressed="true"]{border-color:#42c59a;background:#124b42;box-shadow:inset 0 0 0 1px rgba(66,197,154,.28)}
+    .mode-button[data-locked="true"]{border-color:#a97b4f;background:#3c3027;color:#ffe5c8}
+    .mode-button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+    .mode-note{margin-top:10px;max-width:100ch;color:var(--muted);font-size:12px;line-height:1.55}
+    .readiness-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+    .readiness-item{padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:rgba(9,24,39,.32);font-size:12px}
+    .readiness-item strong{display:block;margin-bottom:4px}.readiness-item p{margin:0;color:var(--muted);line-height:1.45}
+    .readiness-pass{color:var(--green)}.readiness-blocked{color:var(--amber)}
+    .footer{color:var(--muted);border-top:1px solid var(--line);padding-top:15px;margin-top:22px;font-size:12px}
+    .refresh-btn{cursor:pointer;border:1px solid #6093bb;background:#1c4d73;color:#f2f8ff;font:inherit;font-size:12px;font-weight:800;padding:7px 11px;border-radius:9px}
+    .refresh-btn:hover{background:#285d87}
+    .statusline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .nowrap{white-space:nowrap}.right{text-align:right}
+    @media(max-width:950px){.grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3>.card:last-child{grid-column:1/-1}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}}
+    @media(max-width:620px){.readiness-list{grid-template-columns:1fr}.mode-control-row{align-items:flex-start}body{font-size:14px}.brandmark{width:34px;height:34px}.header-badges{justify-content:flex-start}.grid-3,.grid-2,.grid-4,.strategy-grid,.next-signal-grid{grid-template-columns:1fr}.grid-3>.card:last-child{grid-column:auto}.card{padding:13px;border-radius:12px}.hero{padding:14px}.mini-grid,.settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}main{padding:15px 10px 28px}.metric{font-size:28px}.big-line{font-size:25px}.mini .value{font-size:15px}.next-countdown-value{font-size:36px}.next-signal-panel{padding:12px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap header-row">
+    <div class="brandline">
+      <div class="brandmark" aria-hidden="true">B</div>
+      <div><div class="brandname">BTC ENGINE</div><div class="brandtag">Kalshi 15-minute · paper execution</div></div>
+    </div>
+    <div class="header-badges">
+      <span class="top-pill green" id="paper-badge">PAPER MODE ONLY</span>
+      <span class="top-pill" id="updated-pill">Updating…</span>
+      <span class="badge wait" id="connection-badge" role="status" aria-live="polite">Connecting…</span>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="grid-3" aria-label="Engine overview">
+    <article class="card accent-green">
+      <div class="card-titleline"><h2>Realized P&amp;L</h2><span class="badge blue">After recorded fees</span></div>
+      <div class="metric" id="pnl">—</div>
+      <p class="small">Cumulative result from settled paper trades.</p>
+      <div class="rule"></div>
+      <div class="rowline"><span class="label">Win rate</span><span class="value" id="win-rate">—</span></div>
+      <div class="rowline"><span class="label">Settled trades</span><span class="value" id="settled-trades">—</span></div>
+      <div class="rowline"><span class="label">Wins / losses</span><span class="value" id="wins-losses">—</span></div>
+      <div class="rowline"><span class="label">All trades recorded</span><span class="value" id="total-trades">—</span></div>
+      <p class="small" style="margin-top:10px">Historical performance describes the sample so far; it is not a forecast for the next signal.</p>
+    </article>
+    <article class="card accent-green">
+      <div class="card-titleline"><h2>Engine connection</h2><span class="badge wait" id="engine-badge">Checking</span></div>
+      <div class="big-line" id="engine-status">Connecting…</div>
+      <p class="small" id="engine-updated">Checking API and worker heartbeat.</p>
+      <div class="rule"></div>
+      <div class="rowline"><span class="label">Paper worker</span><span class="value" id="worker-enabled">Checking</span></div>
+      <div class="rowline"><span class="label">Last heartbeat</span><span class="value" id="worker-heartbeat">—</span></div>
+      <div class="rowline"><span class="label">Last action</span><span class="value" id="worker-action">—</span></div>
+      <div class="rowline"><span class="label">Kalshi API</span><span class="value" id="kalshi-status">Checking</span></div>
+      <div class="rowline"><span class="label">Real orders</span><span class="value positive" id="real-orders">Disabled</span></div>
+    </article>
+    <article class="card accent-amber">
+      <div class="card-titleline"><h2>Risk limits</h2><span class="badge green">Guardrails</span></div>
+      <div class="rowline"><span class="label">Max cost / trade</span><span class="value" id="max-trade">—</span></div>
+      <div class="rowline"><span class="label">Daily loss limit</span><span class="value" id="daily-loss-limit">—</span></div>
+      <div class="rowline"><span class="label">Preferred entry target (soft)</span><span class="value" id="adaptive-entry-target">—</span></div>
+      <div class="rowline"><span class="label">Hard entry cap</span><span class="value" id="hard-entry-cap">—</span></div>
+      <p class="small" id="adaptive-entry-note" style="margin-top:6px">Preferred price is advisory only; valid signals can enter above it up to the hard cap if all safeguards pass.</p>
+      <div class="rowline"><span class="label">Open exposure</span><span class="value" id="exposure">—</span></div>
+      <div class="rowline"><span class="label">Open positions</span><span class="value" id="open-positions">—</span></div>
+      <div class="notice"><strong>Safety lock:</strong> This dashboard is read-only. It cannot place, close, or enable real orders.</div>
+    </article>
+  </section>
+
+  <section class="card trading-mode-card" id="trading-mode-control" aria-label="Trading mode selection">
+    <div class="section-head">
+      <div><h2>Trading mode</h2><p class="section-desc">Paper mode is active. Real mode remains server-locked until authenticated order execution, credential storage, reconciliation, and risk safeguards have passed end-to-end Demo tests.</p></div>
+      <span class="badge green" id="mode-state-badge">PAPER MODE ACTIVE</span>
+    </div>
+    <div class="mode-control-row">
+      <div class="mode-selector" role="group" aria-label="Choose trading mode">
+        <button type="button" class="mode-button" id="mode-paper" aria-pressed="true">Paper trading · Active</button>
+        <button type="button" class="mode-button" id="mode-real" aria-pressed="false" data-locked="true">Real trading · Locked</button>
+      </div>
+      <span class="small" id="mode-api-status" role="status" aria-live="polite">Checking server-side mode gate…</span>
+    </div>
+    <p class="mode-note" id="mode-control-status">Real trading is locked because the current build has no real-order adapter, authenticated multi-user isolation, or live emergency-stop/reconciliation path. This lock is enforced server-side, not just by the button.</p>
+    <details style="margin-top:12px"><summary>Real-trading readiness checklist</summary><div class="readiness-list" id="live-readiness-list"><div class="readiness-item">Loading readiness checks…</div></div></details>
+    <details style="margin-top:10px"><summary>Connect Kalshi account · one-time credential setup</summary>
+      <div class="credential-setup-card" id="kalshi-account-setup">
+        <div id="admin-login-controls" class="settings-grid" style="margin-top:0">
+          <div class="mini" style="grid-column:1/-1"><label for="admin-secret-input">Dashboard admin secret</label><input id="admin-secret-input" type="password" autocomplete="current-password" maxlength="512" placeholder="Enter KALSHI_VAULT_ADMIN_SECRET" style="width:100%;margin-top:6px"></div>
+          <div><button type="button" class="mode-button" id="admin-login-button">Unlock secure controls</button></div>
+          <div class="mini"><span id="admin-session-status" class="small" role="status" aria-live="polite">Checking admin configuration…</span></div>
+        </div>
+        <div id="kalshi-admin-controls" hidden>
+          <div class="credential-step">
+            <span class="credential-step-number">1</span>
+            <div class="credential-step-copy"><strong>Choose your environment.</strong><br>Start with <strong>Kalshi Demo</strong> (mock funds). Save production credentials separately; the two key pairs are not interchangeable.</div>
+          </div>
+          <div class="credential-field">
+            <label for="kalshi-cred-environment">Kalshi account environment</label>
+            <select id="kalshi-cred-environment" class="credential-input"><option value="demo">Kalshi Demo · mock funds</option><option value="production">Kalshi Production</option></select>
+          </div>
+          <div class="credential-step" style="margin-top:20px">
+            <span class="credential-step-number">2</span>
+            <div class="credential-step-copy"><strong>Create an API key in Kalshi Profile → Settings → API Keys.</strong><br>Use Read and Trade (or the equivalent Read and Write permission), then download the private key file that matches that key. Transfer permission is not required for this application.</div>
+          </div>
+          <div class="credential-step">
+            <span class="credential-step-number">3</span>
+            <div class="credential-step-copy"><strong>Enter the Key ID and upload the matching private key file.</strong><br>The server validates and encrypts the pair before storing it in the shared database. The private key will not be returned to the browser after saving.</div>
+          </div>
+          <div class="credential-fields">
+            <div class="credential-field"><label for="kalshi-api-key-id">Kalshi API Key ID</label><input id="kalshi-api-key-id" class="credential-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" placeholder="Paste API Key ID"></div>
+            <div class="credential-field"><label for="kalshi-private-key-file">Private key file (.key / .pem / .txt)</label><input id="kalshi-private-key-file" class="credential-file" type="file" accept=".key,.pem,.txt,text/plain,application/x-pem-file" aria-describedby="kalshi-file-help"><p class="small" id="kalshi-file-help" style="margin-top:5px">Maximum 16 KB. Choose the original private-key file downloaded from Kalshi; do not upload it to GitHub.</p></div>
+          </div>
+          <label class="credential-ack" for="kalshi-authorization-ack"><input id="kalshi-authorization-ack" type="checkbox"><span>I authorize this app to store and use these credentials for authenticated Kalshi account access. I understand that this current build does not submit real orders; any future live trading requires a separate enable action and completed readiness checks. Prediction-market trading carries risk and I remain responsible for my account and compliance with Kalshi’s terms.</span></label>
+          <button type="button" class="connect-button" id="kalshi-save-credentials">Connect Kalshi account</button>
+          <div class="credential-secondary-actions">
+            <button type="button" class="mode-button" id="kalshi-verify-credentials">Verify saved key · read-only</button>
+            <button type="button" class="mode-button" id="kalshi-clear-credentials">Delete saved key pair</button>
+            <button type="button" class="mode-button" id="admin-logout-button">Lock controls</button>
+          </div>
+          <p class="mode-note" id="kalshi-credential-status" role="status" aria-live="polite">Saved credential status not loaded.</p>
+        </div>
+      </div>
+    </details>
+    <details style="margin-top:10px"><summary>Multi-user security readiness</summary><p class="mode-note" id="multi-user-summary">Multi-user access remains disabled until server-side authentication, account-scoped data, per-user risk limits, and isolation tests are implemented.</p><div class="readiness-list" id="multi-user-readiness-list"></div></details>
+  </section>
+
+  <section class="intro">
+    <div class="eyebrow">Engine overview / trading journal</div>
+    <h1>Your engine. One clear view.</h1>
+    <p class="subtitle">Signals, simulated positions, realized results, market-data health, and safety limits — all in one readable dashboard.</p>
+  </section>
+
+  <section class="card section accent-green active-position-priority" id="active-position-section" aria-label="Current position and next entry status">
+    <div class="section-head">
+      <div><h2 id="position-context-title">Waiting For Next Available Signal</h2><p class="section-desc" id="position-context-desc">This priority panel shows the active paper position and its entry reasoning, or the current waiting reason and next-signal countdown when no position is open.</p></div>
+      <span class="badge wait" id="active-position-badge">Checking current state</span>
+    </div>
+    <div class="next-signal-panel" id="next-signal-waiting">
+      <div class="next-signal-grid">
+        <div>
+          <div class="card-kicker">Current position / next signal</div>
+          <div class="next-signal-title" id="next-signal-status" role="status" aria-live="polite">Waiting For Next Available Signal</div>
+          <p class="next-signal-copy" id="next-signal-summary">No paper position is open. The bot is waiting for a fresh indicator alert; the countdown is an estimate of the expected response/window timing, not a guarantee an alert will arrive.</p>
+        </div>
+        <div class="next-countdown-box">
+          <div class="next-countdown-label" id="next-signal-countdown-label">Expected indicator response</div>
+          <div class="next-countdown-value" id="next-signal-countdown">—</div>
+          <div class="next-countdown-help" id="next-signal-countdown-help">Waiting for current-window timing data.</div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:13px">
+        <div class="next-reason-panel">
+          <h3>Why the bot is waiting</h3>
+          <ul class="reason-list" id="next-signal-reasons"><li>Waiting for current-window status.</li></ul>
+        </div>
+        <div class="next-reason-panel">
+          <h3>Checks required before any entry</h3>
+          <ul class="reason-list" id="next-signal-checks">
+            <li>A fresh UP or DOWN alert for the current 15-minute window.</li>
+            <li>Fresh BTC candles and a healthy trend snapshot.</li>
+            <li>Valid current Kalshi order-book quotes and acceptable spread.</li>
+            <li>Entry ask at or below the configured target, plus all risk checks.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="next-window-meta" id="next-signal-window-meta">No active 15-minute window timing reported yet.</p>
+    </div>
+    <div id="active-position-details" style="display:none">
+      <div class="grid-3">
+        <div class="mini"><div class="label">Open position</div><div class="value" id="active-position-direction">—</div><div class="help" id="active-position-market">—</div></div>
+        <div class="mini"><div class="label">Entry price / total cost</div><div class="value" id="active-position-entry">—</div><div class="help" id="active-position-cost">—</div></div>
+        <div class="mini"><div class="label">Opened / age</div><div class="value" id="active-position-opened">—</div><div class="help" id="active-position-age">—</div></div>
+      </div>
+      <div class="grid-3" style="margin-top:10px">
+        <div class="mini"><div class="label">Contracts / signal source</div><div class="value" id="active-position-contracts">—</div><div class="help" id="active-position-source">—</div></div>
+        <div class="mini"><div class="label">BTC at entry</div><div class="value" id="active-position-btc">—</div><div class="help" id="active-position-timeframe">—</div></div>
+        <div class="mini"><div class="label">Entry-time chart evidence</div><div class="value" id="active-position-trend">—</div><div class="help" id="active-position-score">—</div></div>
+      </div>
+      <div class="rowline"><span class="label">Position stop / take-profit context</span><span class="value" id="active-position-exits">—</span></div>
+      <div class="notice" id="active-position-summary">Entry-specific context will appear when available.</div>
+      <div class="grid-2" style="margin-top:13px">
+        <div><h3>Why this position was entered</h3><ul class="reason-list" id="active-position-reasons"><li>Entry rationale not linked yet.</li></ul></div>
+        <div><h3>Entry-time warnings</h3><ul class="reason-list" id="active-position-warnings"><li>No entry-time warnings recorded.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section card hero" aria-label="Latest directional signal context">
+    <div class="hero-top">
+      <div><div class="eyebrow" id="signal-eyebrow">Latest directional evaluation</div><h2 id="signal-market" style="margin-top:7px">Waiting for signal data</h2><p class="small" id="signal-meta">The latest saved signal will appear here.</p></div>
+      <div class="statusline"><span class="badge wait" id="signal-age-badge">Checking freshness</span><span class="badge blue" id="signal-direction-badge">No direction yet</span></div>
+    </div>
+    <div class="grid-2" style="margin-top:15px">
+      <div>
+        <div class="card-kicker" id="signal-decision-label">Current decision</div>
+        <div class="hero-title" id="signal-direction">WAITING FOR SIGNAL</div>
+        <p class="hero-copy" id="signal-summary">The dashboard is checking the saved signal and current window.</p>
+        <div class="mini-grid">
+          <div class="mini"><div class="label">BTC price</div><div class="value" id="btc-price">—</div></div>
+          <div class="mini"><div class="label">Strike price</div><div class="value" id="strike-price">—</div></div>
+          <div class="mini"><div class="label">Distance from strike</div><div class="value" id="distance-strike">—</div></div>
+          <div class="mini"><div class="label">Time remaining at signal</div><div class="value" id="seconds-remaining">—</div></div>
+          <div class="mini"><div class="label" id="indicator-countdown-label">Current-window indicator timer</div><div class="value" id="indicator-countdown">—</div><div class="help" id="indicator-countdown-help">Waiting for current-window timing.</div></div>
+          <div class="mini"><div class="label">Entry ask</div><div class="value" id="entry-ask">—</div></div>
+          <div class="mini"><div class="label">Hard entry cap</div><div class="value" id="max-entry-cents">—</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="mini-grid" style="margin-top:0">
+          <div class="mini"><div class="label">Evidence score</div><div class="value" id="evidence-score">—</div><div class="progress"><span id="score-bar"></span></div><div class="help" id="score-note">Rule-based score, not probability</div></div>
+          <div class="mini"><div class="label">Bot win probability</div><div class="value" id="model-probability">Not calibrated</div><div class="help">No calibrated per-signal probability is currently supplied by the model.</div></div>
+          <div class="mini"><div class="label">Market-implied estimate</div><div class="value" id="market-probability">—</div><div class="help" id="market-probability-help">Approximation from the buy price, not a bot forecast.</div></div>
+          <div class="mini"><div class="label">Historical win rate</div><div class="value" id="historical-probability">—</div><div class="help" id="historical-probability-help">Based on all settled trades, not this signal.</div></div>
+        </div>
+        <div class="notice" id="score-probability-note">Score and probability are different measures. A 60/100 evidence score does not mean a 60% chance of winning.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="card section" aria-label="Continuous BTC chart trend monitor">
+    <div class="section-head">
+      <div><h2>Continuous BTC trend monitor</h2><p class="section-desc">The worker refreshes chart context while waiting for the indicator, so the latest trends are already available when an alert arrives. This panel is informational and never places trades by itself.</p></div>
+      <span class="badge wait" id="trend-monitor-badge">Waiting for first update</span>
+    </div>
+    <div class="grid-3">
+      <div class="mini"><div class="label">1-minute trend</div><div class="value" id="trend-monitor-1m">—</div><div class="help" id="trend-monitor-1m-time">Last closed candle not reported</div></div>
+      <div class="mini"><div class="label">5-minute trend</div><div class="value" id="trend-monitor-5m">—</div><div class="help" id="trend-monitor-5m-time">Last closed candle not reported</div></div>
+      <div class="mini"><div class="label">15-minute trend</div><div class="value" id="trend-monitor-15m">—</div><div class="help" id="trend-monitor-15m-time">Last closed candle not reported</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:10px">
+      <div class="mini"><div class="label">Latest BTC price</div><div class="value" id="trend-monitor-price">—</div><div class="help" id="trend-monitor-updated">Last update —</div></div>
+      <div class="mini"><div class="label">Momentum / RSI</div><div class="value" id="trend-monitor-rsi">—</div><div class="help" id="trend-monitor-vwap">1-minute VWAP —</div></div>
+      <div class="mini"><div class="label">Chart evidence</div><div class="value" id="trend-monitor-score">—</div><div class="help" id="trend-monitor-bias">Pre-analysis bias —</div></div>
+    </div>
+    <div class="rowline"><span class="label">Volume confirmation</span><span class="value" id="trend-monitor-volume">—</span></div>
+    <div class="rowline"><span class="label">Market structure</span><span class="value" id="trend-monitor-structure">—</span></div>
+    <div class="rowline"><span class="label">Consolidation / box</span><span class="value" id="trend-monitor-box">—</span></div>
+    <div class="rowline"><span class="label">Session context (UTC)</span><span class="value" id="trend-monitor-calendar">—</span></div>
+    <div class="rowline"><span class="label">Trend / volatility regime</span><span class="value" id="trend-monitor-regime">—</span></div>
+    <div class="notice" id="trend-monitor-note">Waiting for a fresh chart snapshot. A fresh TradingView alert and all existing market, entry-price, spread, and risk checks are still required before a paper trade.</div>
+    <ul class="reason-list" id="trend-monitor-warnings"><li>No trend warnings available yet.</li></ul>
+  </section>
+
+  <section class="grid-2 section" aria-label="Decision and worker status">
+    <article class="card">
+      <div class="card-titleline"><h2 id="decision-section-title">Why the engine chose this</h2><span class="badge wait" id="decision-badge">Loading</span></div>
+      <div class="rowline"><span class="label">Current decision</span><span class="value" id="decision-current">—</span></div>
+      <div class="rowline"><span class="label">Signal age</span><span class="value" id="decision-age">—</span></div>
+      <div class="rowline"><span class="label">Evidence score</span><span class="value" id="decision-score">—</span></div>
+      <div class="notice" id="decision-summary">Decision summary will appear once the latest signal is loaded.</div>
+      <h3 id="signal-reasons-heading" style="margin-top:13px">Signal reasons</h3><ul class="reason-list" id="signal-reasons"><li>Waiting for the latest signal details.</li></ul>
+      <h3 id="signal-warnings-heading" style="margin-top:13px">Warnings to note</h3><ul class="reason-list" id="signal-warnings"><li>No warnings are available yet.</li></ul>
+    </article>
+    <article class="card">
+      <div class="card-titleline"><h2>What happens next</h2><span class="badge green" id="worker-state-badge">Monitoring</span></div>
+      <div class="rowline"><span class="label">Worker status</span><span class="value" id="next-worker-status">—</span></div>
+      <div class="rowline"><span class="label">Current 15-minute window</span><span class="value" id="current-window-status">—</span></div>
+      <div class="rowline"><span class="label">Current-window reason</span><span class="value" id="current-window-reason">—</span></div>
+      <div class="rowline"><span class="label">Last signal</span><span class="value" id="next-last-signal">—</span></div>
+      <div class="rowline"><span class="label">Dashboard API</span><span class="value positive" id="api-status">Healthy</span></div>
+      <div class="rowline"><span class="label">Signal source</span><span class="value" id="signal-source">—</span></div>
+      <div class="rowline"><span class="label">Trend stop</span><span class="value" id="trend-stop">—</span></div>
+      <div class="rowline"><span class="label">Worker's latest action</span><span class="value" id="worker-last-action">—</span></div>
+      <div class="rowline"><span class="label">Worker's latest reason</span><span class="value" id="worker-last-reason">—</span></div>
+      <p class="notice">If the alert, price, or risk checks cannot be verified, the safe behavior is to wait rather than force a trade. Signal scores are not win probabilities.</p>
+    </article>
+  </section>
+
+  <section class="card section" aria-label="Market data health">
+    <div class="section-head"><div><h2>Market-data health</h2><p class="section-desc">Live diagnostic for closed BTC candles and the current Kalshi order book. Healthy data is required for evaluation but does not prove a signal is profitable.</p></div><span class="badge wait" id="market-ready-badge">Checking sources…</span></div>
+    <div class="grid-3">
+      <div class="mini"><div class="label">1-minute BTC candle</div><div class="value" id="candle-1m">—</div><div class="help" id="candle-1m-help">Waiting for diagnostics</div></div>
+      <div class="mini"><div class="label">5-minute BTC candle</div><div class="value" id="candle-5m">—</div><div class="help" id="candle-5m-help">Waiting for diagnostics</div></div>
+      <div class="mini"><div class="label">15-minute BTC candle</div><div class="value" id="candle-15m">—</div><div class="help" id="candle-15m-help">Waiting for diagnostics</div></div>
+    </div>
+    <div class="mini-grid">
+      <div class="mini"><div class="label">Kalshi market</div><div class="value" id="market-ticker">—</div><div class="help" id="market-title">Waiting for current contract</div></div>
+      <div class="mini"><div class="label">Order-book quotes</div><div class="value" id="market-quotes">—</div><div class="help" id="market-quote-source">Quotes source not checked yet.</div></div>
+      <div class="mini"><div class="label">Market closes in</div><div class="value" id="market-close-countdown">—</div><div class="help" id="market-close-time">—</div></div>
+      <div class="mini"><div class="label">Diagnostic check</div><div class="value" id="market-checked-at">—</div><div class="help" id="market-diagnostic-cache">—</div></div>
+    </div>
+  </section>
+
+  <section class="card section" aria-label="Strategy checks">
+    <div class="section-head"><div><h2 id="strategy-checks-title">Strategy checks</h2><p class="section-desc">These describe what the internal rule set detected, not a guaranteed future direction. When the signal panel is marked historical, these details belong to that earlier evaluation.</p></div><span class="badge blue" id="strategy-score-badge">Evidence details</span></div>
+    <div class="strategy-grid">
+      <div class="strategy"><div class="strategy-head"><strong>Trend across timeframes</strong><span class="tag" id="trend-tag">—</span></div><p id="trend-detail">Waiting for strategy details.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Momentum</strong><span class="tag" id="momentum-tag">—</span></div><p id="momentum-detail">Waiting for strategy details.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Volume confirmation</strong><span class="tag" id="volume-tag">—</span></div><p id="volume-detail">Waiting for strategy details.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Box theory</strong><span class="tag" id="box-tag">—</span></div><p id="box-detail">Waiting for strategy details.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Market structure</strong><span class="tag" id="structure-tag">—</span></div><p id="structure-detail">Waiting for strategy details.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Volatility check</strong><span class="tag" id="volatility-tag">—</span></div><p id="volatility-detail">Waiting for strategy details.</p></div>
+    </div>
+    <div class="mini-grid" style="margin-top:11px">
+      <div class="mini"><div class="label">Up-side points</div><div class="value" id="up-points">—</div></div>
+      <div class="mini"><div class="label">Down-side points</div><div class="value" id="down-points">—</div></div>
+      <div class="mini"><div class="label">Net internal points</div><div class="value" id="net-points">—</div></div>
+      <div class="mini"><div class="label">Maximum directional points</div><div class="value" id="max-points">—</div></div>
+    </div>
+    <details style="margin-top:13px"><summary>Advanced diagnostics (technical details)</summary><pre id="advanced-json" style="margin-bottom:0">Waiting for data…</pre></details>
+  </section>
+
+  <section class="card section" aria-label="Strategy performance by source">
+    <div class="section-head"><div><h2>Strategy performance</h2><p class="section-desc">Compare the paper-trade results for each recorded signal source. Counts use net P&amp;L sign after recorded fees; an evidence score is not a win probability.</p></div><span class="badge blue" id="strategy-performance-badge">Collecting results</span></div>
+    <div class="table-wrap"><table style="min-width:850px" aria-label="Strategy performance by signal source"><thead><tr><th>Signal source</th><th>Total</th><th>Settled</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Net P&amp;L</th><th>Open</th><th>Sample status</th></tr></thead><tbody id="strategy-performance"><tr><td colspan="9" class="empty">Waiting for strategy performance data…</td></tr></tbody></table></div>
+    <div class="notice"><strong>How to read this:</strong> old trades may not have an original score linked to them. Their source is classified from the saved source field or trade note when possible; otherwise it remains “legacy unknown.” Do not tune rules from a small sample or one unusually profitable trade.</div>
+  </section>
+
+  <section class="card section" aria-label="Decision quality and retrospective analytics">
+    <div class="section-head"><div><h2>Decision quality &amp; retrospective</h2><p class="section-desc">Actual paper results are separated from hypothetical results for signals that did not open a trade. This panel is descriptive, not a win-probability model.</p></div><span class="badge blue" id="analytics-badge">Loading analytics</span></div>
+    <div class="mini-grid">
+      <div class="mini"><div class="label">Settled journal trades</div><div class="value" id="analytics-settled">—</div><div class="help" id="analytics-total">— total including open</div></div>
+      <div class="mini"><div class="label">Actual net P&amp;L</div><div class="value" id="analytics-pnl">—</div><div class="help">Recorded fees included where stored</div></div>
+      <div class="mini"><div class="label">Win rate</div><div class="value" id="analytics-winrate">—</div><div class="help" id="analytics-winrate-interval">Among settled journal trades; uncertainty grows with small samples</div></div>
+      <div class="mini"><div class="label">Average net / settled trade</div><div class="value" id="analytics-expectancy">—</div><div class="help">Historical average, not a forecast</div></div>
+      <div class="mini"><div class="label">Profit factor</div><div class="value" id="analytics-profit-factor">—</div><div class="help">Gross profit ÷ absolute gross loss</div></div>
+      <div class="mini"><div class="label">Maximum drawdown</div><div class="value" id="analytics-drawdown">—</div><div class="help">Peak-to-trough cumulative journal P&amp;L</div></div>
+    </div>
+    <div class="mini-grid" style="margin-top:11px">
+      <div class="mini"><div class="label">Last 20 settled trades</div><div class="value" id="analytics-last20-pnl">—</div><div class="help" id="analytics-last20-note">—</div></div>
+      <div class="mini"><div class="label">Last 50 settled trades</div><div class="value" id="analytics-last50-pnl">—</div><div class="help" id="analytics-last50-note">—</div></div>
+      <div class="mini"><div class="label">Rejected-signal counterfactuals settled</div><div class="value" id="analytics-cf-settled">—</div><div class="help" id="analytics-cf-pending">— pending eligible reviews</div></div>
+      <div class="mini"><div class="label">Counterfactual net P&amp;L</div><div class="value" id="analytics-cf-pnl">—</div><div class="help">Hypothetical one-contract hold to settlement</div></div>
+    </div>
+    <div class="strategy-grid" style="margin-top:12px">
+      <div class="strategy"><div class="strategy-head"><strong>Trend-stop shadow comparison</strong><span class="tag" id="analytics-shadow-count">—</span></div><p id="analytics-shadow-note">Waiting for settled positions with shadow-stop data.</p></div>
+      <div class="strategy"><div class="strategy-head"><strong>Measurement guardrail</strong><span class="tag">Paper only</span></div><p id="analytics-caution">Waiting for analytics.</p></div>
+    </div>
+    <div style="margin-top:13px"><h3 style="font-size:15px;margin:0 0 8px">Actual results by entry price</h3><div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Entry price</th><th>Settled</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Net P&amp;L</th></tr></thead><tbody id="analysis-by-entry-price"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+    <div style="margin-top:13px"><h3 style="font-size:15px;margin:0 0 8px">Actual results by chart-trend alignment</h3><div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Alignment at entry</th><th>Settled</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Net P&amp;L</th></tr></thead><tbody id="analysis-by-trend"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+    <div style="margin-top:13px"><h3 style="font-size:15px;margin:0 0 8px">Actual results by chart evidence score</h3><div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Chart evidence score</th><th>Settled</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Net P&amp;L</th></tr></thead><tbody id="analysis-by-evidence"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+    <div style="margin-top:13px"><h3 style="font-size:15px;margin:0 0 8px">Rejected-signal counterfactual review</h3><p class="small">These are not trades. They assume one contract entered at the recorded ask and held to official settlement, including recorded entry fees, with no stops, exit fees, slippage, or market impact.</p><div class="table-wrap"><table style="min-width:900px"><thead><tr><th>Evaluated</th><th>Market</th><th>Proposed side</th><th>Decision</th><th>Entry ask</th><th>Chart bias</th><th>Hypothetical net P&amp;L</th></tr></thead><tbody id="counterfactual-trades"><tr><td colspan="7" class="empty">Waiting for a completed rejected-signal outcome…</td></tr></tbody></table></div></div>
+    <details style="margin-top:13px"><summary>Recent decision audit</summary><p class="section-desc">Alert transitions, evaluations, simulated openings/exits, and counterfactual settlements. This is an audit trail, not an order route.</p><div class="table-wrap"><table style="min-width:1000px"><thead><tr><th>Time</th><th>Event</th><th>Decision</th><th>Market</th><th>Side</th><th>Ask</th><th>Trend</th><th>Reason</th></tr></thead><tbody id="recent-decisions"><tr><td colspan="8" class="empty">Waiting for decision events…</td></tr></tbody></table></div><p class="small" id="decision-count-note">—</p></details>
+  </section>
+
+  <section class="card section" aria-label="Post-trade learning feedback">
+    <div class="section-head">
+      <div><h2>Post-trade learning loop</h2><p class="section-desc">Each settled paper trade is recorded once with entry-time chart/features and net outcome. The learning loop reviews cohorts and can conservatively tighten the preferred entry target after repeated fee-inclusive underperformance; it never loosens the target automatically.</p></div>
+      <span class="badge blue" id="learning-badge">Loading learning journal</span>
+    </div>
+    <div class="mini-grid">
+      <div class="mini"><div class="label">Settled trades reviewed</div><div class="value" id="learning-reviewed">—</div><div class="help">Persistent post-trade records</div></div>
+      <div class="mini"><div class="label">Profits / losses / flat</div><div class="value" id="learning-results">—</div><div class="help">Classified by actual recorded net P&amp;L</div></div>
+      <div class="mini"><div class="label">Learning journal net P&amp;L</div><div class="value" id="learning-net-pnl">—</div><div class="help">Cross-check against settled trade journal</div></div>
+      <div class="mini"><div class="label">Observed win rate</div><div class="value" id="learning-win-rate">—</div><div class="help">Historical descriptive rate, not a forecast</div></div>
+    </div>
+    <div class="learning-summary">
+      <article class="learning-review">
+        <div class="card-kicker">Latest completed trade review</div>
+        <h3 id="learning-latest-title" style="margin-top:7px">Waiting for a settled paper trade</h3>
+        <p id="learning-latest-summary">The system will store a feature snapshot and the realized paper P&amp;L after settlement.</p>
+        <ul class="reason-list" id="learning-latest-observations" style="margin-top:10px"><li>No post-trade observations available yet.</li></ul>
+      </article>
+      <article class="learning-review">
+        <div class="card-kicker">How the bot learns</div>
+        <h3 id="learning-policy-title" style="margin-top:7px">Bounded adaptive entry policy</h3>
+        <p id="learning-policy">Each settled result becomes one observation. Target adjustments require a sufficiently large, repeatedly poor high-price cohort.</p>
+        <div class="mini-grid" style="margin-top:10px">
+          <div class="mini"><div class="label">Current target</div><div class="value" id="learning-effective-target">—</div></div>
+          <div class="mini"><div class="label">Automatic tightenings</div><div class="value" id="learning-adjustment-count">0</div></div>
+          <div class="mini"><div class="label">Last reviewed sample</div><div class="value" id="learning-policy-sample">—</div></div>
+        </div>
+        <div class="notice" style="margin-top:10px"><strong>Safety rules:</strong> only the preferred entry target may tighten, by at most 1¢ per qualifying review and at most 5¢ below its initial configured value. The 92¢ hard cap, trade budget, daily loss limit, and live-trading permissions are never changed by learning.</div>
+      </article>
+    </div>
+    <div style="margin-top:15px">
+      <h3>Patterns to review</h3>
+      <p class="small" style="margin-bottom:8px">Cohorts help identify candidate patterns. Small samples are highlighted and must not drive rule changes.</p>
+      <div class="table-wrap"><table style="min-width:760px" aria-label="Post-trade learning cohorts"><thead><tr><th>Feature</th><th>Segment</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Net P&amp;L</th><th>Average / trade</th><th>Sample quality</th></tr></thead><tbody id="learning-cohorts"><tr><td colspan="9" class="empty">Waiting for settled outcomes…</td></tr></tbody></table></div>
+    </div>
+    <div style="margin-top:15px">
+      <h3>Recent learning notes</h3>
+      <ul class="reason-list" id="learning-recent-reviews"><li>No completed post-trade reviews yet.</li></ul>
+      <p class="small" style="margin-top:9px" id="learning-caution">Hypothetical rejected-signal and shadow-exit observations remain separate from actual trade learning and actual net P&amp;L.</p>
+    </div>
+  </section>
+
+  <section class="card section" id="multi-market-scan-section" aria-label="Multi-market research scanner">
+    <div class="section-head">
+      <div><h2>Multi-market scanner</h2><p class="section-desc">Inventory all open Kalshi markets through paginated public API scans, then rank a bounded research pool by reported activity. Deeper event analysis needs a configured, calibrated probability/evidence provider; other categories cannot reuse the BTC strategy.</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge blue" id="market-scan-badge">NOT SCANNED</span><button type="button" class="mode-button" id="market-scan-button">Scan all open markets</button></div>
+    </div>
+    <div class="autopilot-control" id="market-autopilot-control">
+      <div style="min-width:0;flex:1"><div class="statusline"><span class="badge amber" id="market-autopilot-badge">AUTOPILOT OFF</span><strong>Automatic market scanning + paper research trades</strong></div><p class="small" id="market-autopilot-status" style="margin-top:6px">Off by default. Unlock secure controls and configure a validated analysis provider before turning this on. When ON, it automatically scans open markets and rotates through the research pool for eligible paper entries; it can never send live orders.</p></div>
+      <button type="button" class="mode-button autopilot-toggle" id="market-autopilot-toggle" aria-pressed="false">Start autopilot</button>
+    </div>
+    <p class="small" id="market-scan-status" role="status" aria-live="polite">When autopilot is ON, the catalog is scanned automatically page by page. The catalog scanner inventories and classifies markets; the separate research pipeline can create eligible paper-only entries.</p>
+    <div class="mini-grid" style="margin-top:12px">
+      <div class="mini"><div class="label">Candidates inventoried</div><div class="value" id="market-scan-total">—</div><div class="help">All open-market pages are scanned up to a hard safety cap</div></div>
+      <div class="mini"><div class="label">BTC 15-minute candidates</div><div class="value" id="market-scan-btc">—</div><div class="help">Still subject to normal BTC trade gates</div></div>
+      <div class="mini"><div class="label">Research-only categories</div><div class="value" id="market-scan-research">—</div><div class="help">Not eligible for paper entries yet</div></div>
+      <div class="mini"><div class="label">Unclassified / blocked</div><div class="value" id="market-scan-blocked">—</div><div class="help">Unknown markets never reach a strategy</div></div>
+    </div>
+    <div class="table-wrap" style="margin-top:13px"><table style="min-width:900px" aria-label="Market scanner candidates"><thead><tr><th>Ticker</th><th>Market</th><th>Category</th><th>Implied YES</th><th>Route state</th><th>Context readiness</th></tr></thead><tbody id="market-scan-rows"><tr><td colspan="6" class="empty">Waiting for the all-open-markets inventory…</td></tr></tbody></table></div>
+    <p class="small" style="margin-top:10px">The full catalog is inventoried; deeper research runs on a bounded activity-ranked rotating pool to respect API rate limits. A market cannot receive a trade candidate without a validated category probability model, fresh sourced evidence, usable order-book depth, narrow spreads, and positive expected value after costs. The inventory endpoint itself cannot place live orders.</p>
+  </section>
+
+  <section class="card section" id="market-decision-section" aria-label="Market research and paper opportunity engine">
+    <div class="section-head">
+      <div><h2>Market research → paper decision pipeline</h2><p class="section-desc">Reviews a rotating set of activity-ranked open markets, obtains current order-book quotes, and asks a configured model/evidence provider for a calibrated probability plus source-attributed news, injury/lineup or event evidence. It will not invent probabilities when that provider is missing.</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge blue" id="market-analysis-badge">NOT RUN</span><button type="button" class="mode-button" id="market-analysis-button" disabled>Run research batch · unlock admin first</button></div>
+    </div>
+    <p id="market-analysis-status" class="small" role="status" aria-live="polite">Waiting for scanner and validated evidence provider configuration. This pipeline can only create separate hold-to-settlement paper simulations; it cannot place live orders.</p>
+    <div class="mini-grid" style="margin-top:12px">
+      <div class="mini"><div class="label">Ranked research pool</div><div class="value" id="market-analysis-pool">—</div><div class="help">Bounded by the candidate-pool setting</div></div>
+      <div class="mini"><div class="label">Analyzed this batch</div><div class="value" id="market-analysis-count">—</div><div class="help">Rotates through eligible candidates</div></div>
+      <div class="mini"><div class="label">Paper entries created</div><div class="value" id="market-analysis-entered">—</div><div class="help">Separate research journal; no live orders</div></div>
+      <div class="mini"><div class="label">Settled research win rate</div><div class="value" id="market-analysis-winrate">—</div><div class="help" id="market-analysis-pnl">Separate hold-to-settlement results</div></div>
+    </div>
+    <div class="table-wrap" style="margin-top:13px"><table style="min-width:1050px" aria-label="Research opportunities"><thead><tr><th>Ticker / market</th><th>Category</th><th>Model YES</th><th>YES / NO ask</th><th>Net edge YES / NO</th><th>Decision</th><th>Why / evidence</th></tr></thead><tbody id="market-analysis-rows"><tr><td colspan="7" class="empty">No analysis batch yet. Configure a validated HTTPS provider and turn autopilot ON to start scheduled analysis and eligible paper-only entries automatically.</td></tr></tbody></table></div>
+    <p class="small" style="margin-top:10px">Source and model gates: at least 100 out-of-sample calibration observations by default, Brier score ≤ 0.22, fresh source timestamps, category-required evidence types, ≥5 contracts at the best displayed ask, ≤5¢ spread, and ≥5¢ estimated net edge after fees/slippage. These are conservative defaults, not a guarantee of profitability.</p>
+  </section>
+
+  <section class="card section" aria-label="Paper trade activity">
+    <div class="section-head"><div><h2>Paper trade activity</h2><p class="section-desc">The journal records simulated entries, outcomes, and net profit/loss. Open positions are not counted as settled results.</p></div><span class="badge blue" id="trade-count-badge">Most recent trades</span></div>
+    <div class="table-wrap"><table style="min-width:1000px" aria-label="Paper trade activity"><thead><tr><th>Opened</th><th>Market</th><th>Side</th><th>Signal source</th><th>Entry score</th><th>Contracts</th><th>Entry</th><th>Status</th><th>Outcome</th><th>Net P&amp;L</th></tr></thead><tbody id="trades"><tr><td colspan="10" class="empty">Waiting for trades…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="card section">
+    <details><summary>Recent external alerts</summary><p class="section-desc" style="margin-bottom:11px">Received alerts are separate from executed paper trades. An alert can be accepted, skipped, ignored, or rejected without opening a position.</p>
+      <div class="table-wrap"><table aria-label="Recent external alerts"><thead><tr><th>Received</th><th>Direction</th><th>Symbol</th><th>Timeframe</th><th>Processing status</th><th>Processing note</th></tr></thead><tbody id="alerts"><tr><td colspan="6" class="empty">No alerts recorded.</td></tr></tbody></table></div>
+      <p class="small" style="margin-top:9px" id="alert-count">—</p>
+    </details>
+    <details style="margin-top:10px"><summary>Safety settings and definitions</summary>
+      <div class="settings-grid">
+        <div class="mini"><div class="label">Run mode</div><div class="value" id="mode">—</div></div>
+        <div class="mini"><div class="label">Real orders enabled</div><div class="value" id="real-orders-details">—</div></div>
+        <div class="mini"><div class="label">Database</div><div class="value" id="database-backend">—</div></div>
+        <div class="mini"><div class="label">Max cost per trade</div><div class="value" id="settings-max-trade">—</div></div>
+        <div class="mini"><div class="label">Daily loss limit</div><div class="value" id="settings-max-loss">—</div></div>
+        <div class="mini"><div class="label">Updated from server</div><div class="value" id="server-updated">—</div></div>
+      </div>
+      <div class="strategy-grid" style="margin-top:12px">
+        <div class="strategy"><strong>Evidence score</strong><p>A rule-based evidence score from 0 to 100. It is not a percent chance of winning.</p></div>
+        <div class="strategy"><strong>Bot win probability</strong><p>Not calculated until the strategy has a calibrated model that has been tested against enough historical outcomes.</p></div>
+        <div class="strategy"><strong>Market-implied estimate</strong><p>A rough price-based indication from the contract ask. It includes market pricing and can differ from the true outcome probability.</p></div>
+        <div class="strategy"><strong>Historical win rate</strong><p>The proportion of all settled journal trades recorded as wins. It is not a probability forecast for one particular signal.</p></div>
+      </div>
+    </details>
+  </section>
+
+  <footer class="footer"><strong>Paper mode only.</strong> This dashboard is read-only and cannot place or enable real orders. Market-implied pricing, evidence scores, and historical win rates are different measures. Simulated results do not guarantee future performance. <span id="last-refresh">Last refreshed: —</span></footer>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const hasNum = v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
+  const asNum = (v, fallback=0) => hasNum(v) ? Number(v) : fallback;
+  const money = v => hasNum(v) ? `${Number(v)<0?'-':''}$${Math.abs(Number(v)).toFixed(2)}` : '—';
+  const cents = v => hasNum(v) ? `${Number(v).toFixed(1).replace(/\.0$/,'')}¢` : '—';
+  const usd = v => hasNum(v) ? `$${Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—';
+  const nfmt = (v,d=2) => hasNum(v) ? Number(v).toLocaleString(undefined,{maximumFractionDigits:d}) : '—';
+  const time = v => { const t=v?Date.parse(v):NaN; return Number.isFinite(t)?new Date(t).toLocaleString(): 'Time unavailable'; };
+  const clock = v => { const t=v?Date.parse(v):NaN; return Number.isFinite(t)?new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'}):'—'; };
+  const age = v => !hasNum(v)?'age unknown':Number(v)<60?`${Math.floor(Number(v))}s ago`:Number(v)<3600?`${Math.floor(Number(v)/60)}m ago`:`${Math.floor(Number(v)/3600)}h ago`;
+  const write = (id,v) => { if ($(id)) $(id).textContent = v===null || v===undefined || v==='' ? '—' : String(v); };
+  const tone = (id,style) => { if ($(id)) $(id).className = ($(id).className.split(/\s+/).filter(c=>!['green','red','amber','blue','wait','positive','negative'].includes(c)).join(' ')+' '+style).trim(); };
+  const setBadge = (id, label, style='wait') => { write(id,label); if($(id)) $(id).className='badge '+style; };
+  const direction = v => { const d=String(v||'').toUpperCase(); if(['BUY_UP','UP','LONG','BUY'].includes(d)) return 'BUY UP'; if(['BUY_DOWN','DOWN','SHORT','SELL'].includes(d)) return 'BUY DOWN'; return d||'—'; };
+  const dirTone = v => /DOWN|SHORT|SELL/i.test(String(v||'')) ? 'negative' : /UP|LONG|BUY/i.test(String(v||'')) ? 'positive' : '';
+  const statusTone = v => { const s=String(v||'').toLowerCase(); if(['processed','accepted','running','settled'].includes(s)) return 'positive'; if(['ignored','rejected','error','stale'].includes(s)) return 'negative'; return 'warning-text'; };
+  const safeText = v => v===null||v===undefined||v===''?'Not reported':String(v);
+  function setList(id,values,empty){const ul=$(id);ul.replaceChildren();const arr=Array.isArray(values)?values:[];if(!arr.length){const li=document.createElement('li');li.textContent=empty;ul.appendChild(li);return;}for(const item of arr){const li=document.createElement('li');li.textContent=String(item);ul.appendChild(li);}}
+  function addCell(tr,value,className=''){const td=document.createElement('td');td.textContent=value===null||value===undefined||value===''?'—':String(value);if(className)td.className=className;tr.appendChild(td);}
+  function formatReason(s){return String(s||'').replace(/^Internal diagnostics:\s*/,'').replace(/^TradingView\/GainzAlgo proposes /,'External alert proposes ').replace(/^Evidence score /,'Evidence score ');}
+
+  function currentWindowLabel(cw){
+    const fmt=v=>{const t=v?Date.parse(v):NaN;return Number.isFinite(t)?new Date(t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'—';};
+    return cw.window_start&&cw.window_end?`${fmt(cw.window_start)}–${fmt(cw.window_end)}`:'Current 15-minute window';
+  }
+  function renderSignal(data, stats){
+    const saved=data.latest_signal||{};
+    const historical=data.latest_directional_signal||{};
+    const cw=data.current_window_decision||{};
+    const cwSide=direction(cw.direction);
+    const maxAlertAge=hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300;
+    const alertAge=hasNum(cw.alert_age_seconds)?Number(cw.alert_age_seconds):null;
+    const windowStart=cw.window_start?Date.parse(cw.window_start):NaN;
+    const windowEnd=cw.window_end?Date.parse(cw.window_end):NaN;
+    const alertTime=cw.alert_received_at?Date.parse(cw.alert_received_at):NaN;
+    const now=Date.now();
+    const directionalAlert=['BUY UP','BUY DOWN'].includes(cwSide);
+    const inActiveWindow=(!Number.isFinite(windowStart)||now>=windowStart) &&
+      (!Number.isFinite(windowEnd)||now<windowEnd) &&
+      (!(Number.isFinite(windowStart)&&Number.isFinite(windowEnd)) ||
+        (Number.isFinite(alertTime)&&alertTime>=windowStart&&alertTime<windowEnd));
+    const currentAlert=String(cw.phase||'')==='signal_received' && directionalAlert &&
+      alertAge!==null && alertAge<=maxAlertAge && inActiveWindow;
+    const currentProcessingStatus=String(cw.processing_status||'queued').toLowerCase();
+    const terminalProcessingStatus=Boolean(cw.processed_at)||['processed','paper_opened','vetoed','skipped','ignored','wait','blocked'].includes(currentProcessingStatus);
+    const created=saved.created_at?Date.parse(saved.created_at):NaN;
+    const createdInWindow=Number.isFinite(created)&&Number.isFinite(windowStart)&&Number.isFinite(windowEnd)&&created>=windowStart&&created<windowEnd;
+    const savedAge=hasNum(saved.age_seconds)?Number(saved.age_seconds):null;
+    const savedFresh=!saved.is_stale&&(savedAge===null||savedAge<=maxAlertAge);
+    const savedDirection=direction(saved.proposed_direction||saved.direction);
+    const historicalDirection=direction(historical.proposed_direction||historical.direction);
+    const historicalCreated=historical.created_at?Date.parse(historical.created_at):NaN;
+    const historicalInWindow=Number.isFinite(historicalCreated)&&Number.isFinite(windowStart)&&Number.isFinite(windowEnd)&&historicalCreated>=windowStart&&historicalCreated<windowEnd;
+    const historicalFresh=!historical.is_stale&&(hasNum(historical.age_seconds)?Number(historical.age_seconds)<=maxAlertAge:true);
+    const linkedToCurrentAlert=currentAlert&&hasNum(cw.alert_id)&&hasNum(historical.external_signal_id)&&Number(cw.alert_id)===Number(historical.external_signal_id);
+    const historicalEvaluationMatchesAlert=hasNum(cw.alert_id)&&hasNum(historical.external_signal_id)
+      ?linkedToCurrentAlert:(historicalInWindow&&Boolean(historical.decision_status));
+    const linkedDirectionalEvaluation=currentAlert&&historicalFresh&&['BUY UP','BUY DOWN'].includes(historicalDirection)&&
+      historicalDirection===cwSide&&historicalEvaluationMatchesAlert;
+    const evaluatedSavedSignal=currentAlert&&createdInWindow&&savedFresh&&savedDirection===cwSide&&Boolean(saved.decision_status||saved.reasons?.length);
+    const evaluatedCurrentSignal=Boolean(linkedDirectionalEvaluation||evaluatedSavedSignal);
+    const currentAlertPending=currentAlert&&!evaluatedCurrentSignal&&!terminalProcessingStatus;
+    const hasHistoricalDirection=Boolean(historical.created_at)&&['BUY UP','BUY DOWN'].includes(historicalDirection);
+    // A stale directional call remains historical context. For the current window, prefer
+    // the saved row linked to this exact TradingView alert—even if its logged action is WAIT
+    // because the signal was vetoed or the entry quote was unavailable.
+    const showHistorical=!evaluatedCurrentSignal&&!currentAlert&&hasHistoricalDirection;
+    const s=evaluatedCurrentSignal?(linkedDirectionalEvaluation?historical:saved):(showHistorical?historical:{});
+    const hasDisplayedEvaluation=evaluatedCurrentSignal||showHistorical;
+    const hasCurrentEvaluation=evaluatedCurrentSignal;
+    const isHistorical=showHistorical;
+    const side=hasDisplayedEvaluation?direction(s.direction||s.proposed_direction):(currentAlert?cwSide:'');
+    const waitingLabel=String(cw.phase||'')==='indicator_wait'?'INDICATOR SAYS WAIT':'WAIT THIS WINDOW';
+    const rawScore=hasDisplayedEvaluation&&hasNum(s.score)?Math.max(0,Math.min(100,Number(s.score))):null;
+    const chartScoreCandidates=[s.trend_evidence_score,s.chart_evidence_score,s.chart_trend_at_decision?.evidence_score,
+      s.payload?.chart_trend_at_decision?.evidence_score,s.payload?.trend_evidence_score];
+    const savedChartScore=chartScoreCandidates.find(v=>hasNum(v)&&Number(v)>0);
+    // Older/current WAIT payloads sometimes store action score 0 and omit the separate chart score.
+    // If the bot's own reason says "Evidence score 58/100...", use that exact displayed evidence.
+    const reasonText=Array.isArray(s.reasons)?s.reasons.join(' '):'';
+    const reasonScoreMatch=reasonText.match(/(?:chart\s+)?evidence score\s+(\d{1,3}(?:\.\d+)?)\s*\/\s*100/i);
+    const scoreFromReason=reasonScoreMatch?Number(reasonScoreMatch[1]):undefined;
+    const chartScore=savedChartScore!==undefined?savedChartScore:(hasNum(scoreFromReason)&&scoreFromReason>0?scoreFromReason:undefined);
+    const statusForScore=String(s.decision_status||s.entry_price_gate?.decision||'').toLowerCase();
+    const waitPlaceholderScore=(rawScore===0||rawScore===null)&&(String(s.direction||'').toUpperCase()==='WAIT'||statusForScore.includes('wait_for_better_price'));
+    // WAIT/price-wait journal rows may store score 0 to represent the non-entry decision;
+    // display the saved chart score or the exact score embedded in the bot's own explanation.
+    const score=hasDisplayedEvaluation?(waitPlaceholderScore&&chartScore!==undefined?Math.max(0,Math.min(100,Number(chartScore))):rawScore):null;
+    const ageSeconds=hasDisplayedEvaluation?s.age_seconds:null;
+    const thresholdMatch=(hasDisplayedEvaluation&&Array.isArray(s.reasons)?s.reasons.join(' '):'').match(/configured\s+(\d+(?:\.\d+)?)\/100\s+threshold/i);
+    const threshold=thresholdMatch?Number(thresholdMatch[1]):65;
+    const windowText=currentWindowLabel(cw);
+    const decisionStatus=String(s.decision_status||'').replaceAll('_',' ');
+
+    write('signal-market',hasDisplayedEvaluation?(s.market_ticker||'Last directional evaluation'):'Current 15-minute window');
+    if(hasCurrentEvaluation){
+      write('signal-meta',`Current-window evaluation · ${time(s.created_at)} · signal age ${age(ageSeconds)}`);
+      setBadge('signal-age-badge',`Current · ${age(ageSeconds)}`,'green');
+      write('signal-eyebrow','Latest evaluated signal · current window');
+    }else if(currentAlertPending){
+      const waitHint=currentProcessingStatus==='waiting_for_orderbook'?' · waiting for Kalshi quotes':currentProcessingStatus==='waiting_for_market'?' · waiting for an eligible market':' · waiting for evaluation';
+      write('signal-meta',`Fresh ${cwSide} alert received ${alertAge===null?'recently':age(alertAge)} · ${windowText}${waitHint}`);
+      setBadge('signal-age-badge','Current alert received','green');
+      write('signal-eyebrow','Latest alert · evaluation pending');
+    }else if(currentAlert){
+      write('signal-meta',`Fresh ${cwSide} alert · worker status: ${String(cw.processing_status||'processed').replaceAll('_',' ')} · ${windowText}`);
+      setBadge('signal-age-badge','Alert status recorded','amber');
+      write('signal-eyebrow','Latest alert · processing status reported');
+    }else if(isHistorical){
+      write('signal-meta',`Recorded ${time(s.created_at)} · ${age(ageSeconds)} · HISTORICAL CONTEXT${decisionStatus?` · last decision: ${decisionStatus}`:''}`);
+      setBadge('signal-age-badge',`Historical · ${age(ageSeconds)}`,'amber');
+      write('signal-eyebrow','Last directional evaluation · not current-window guidance');
+    }else{
+      write('signal-meta',`${windowText} · no saved directional evaluation is available`);
+      setBadge('signal-age-badge',String(cw.phase||'')==='no_fresh_signal'?'Indicator response passed':'Waiting for current signal','amber');
+      write('signal-eyebrow','Latest directional evaluation');
+    }
+    setBadge('signal-direction-badge',hasDisplayedEvaluation?side:(currentAlert?side:'No current alert'),
+      hasCurrentEvaluation?(side.includes('DOWN')?'red':'green'):(currentAlert?(side.includes('DOWN')?'red':'green'):(isHistorical?'blue':'amber')));
+    const directionStatusSuffix=currentAlertPending?' · AWAITING EVALUATION':(currentAlert&&!evaluatedCurrentSignal?` · ${String(cw.processing_status||'processed').replaceAll('_',' ').toUpperCase()}`:'');
+    write('signal-direction',hasCurrentEvaluation?side:(currentAlert?`${side}${directionStatusSuffix}`:isHistorical?`${side} · HISTORICAL CONTEXT`:waitingLabel));
+    if($('signal-direction')) $('signal-direction').style.color=hasCurrentEvaluation||currentAlert?(side.includes('DOWN')?'var(--red)':'var(--green)'):(isHistorical?'var(--blue)':'var(--amber)');
+    write('signal-decision-label',isHistorical?'Last directional call':currentAlert?'Current alert':'Current decision');
+    write('decision-section-title',isHistorical?'Why the last directional call was evaluated this way':'Why the engine chose this');
+    write('signal-reasons-heading',isHistorical?'Recorded reasons for that evaluation':'Signal reasons');
+    write('signal-warnings-heading',isHistorical?'Warnings recorded at that evaluation':'Warnings to note');
+    write('strategy-checks-title',isHistorical?'Strategy checks from the last directional evaluation':'Strategy checks');
+    write('indicator-countdown-label','Current-window indicator timer');
+
+    let summary;
+    if(hasCurrentEvaluation){
+      const low=score!==null&&score<threshold;
+      const source=String(data.health?.signal_source||'unknown').toLowerCase();
+      const lowScoreNote=low&&source==='hybrid'
+        ?`The internal evidence score (${score}/100) is below the ${threshold}/100 threshold, but hybrid mode may still allow a fresh external alert when no major-flaw veto is triggered.`
+        :low?`The internal evidence score (${score}/100) is below the ${threshold}/100 threshold.`
+        :'Review market-data and risk checks before interpreting this as actionable.';
+      summary=`${side} is the current-window evaluation from the configured ${source.toUpperCase()} signal path. ${lowScoreNote} This is paper-only and is not a measured probability of winning.`;
+    }else if(currentAlertPending){
+      const workerNote=String(cw.processing_note||cw.reason||'').trim();
+      summary=workerNote||`A fresh ${side} alert has arrived for the current 15-minute window. Its evaluation details are not available yet. The last evaluated call is kept separately as historical context and is not substituted into this current alert.`;
+    }else if(currentAlert){
+      const workerNote=String(cw.processing_note||cw.reason||'').trim();
+      summary=`The worker recorded status “${String(cw.processing_status||'processed').replaceAll('_',' ')}” for this ${side} alert, but no matching detailed evaluation row is available to this panel. ${workerNote}`.trim();
+    }else if(isHistorical){
+      const finalDecision=decisionStatus?` The recorded outcome was “${decisionStatus}”.`:'';
+      summary=`The most recent directional proposal was ${side}, recorded ${age(ageSeconds)} ago.${finalDecision} This is retained so you can inspect its original analysis, but it is NOT a new/current-window entry instruction. Current window status: ${String(cw.status||waitingLabel).replaceAll('_',' ')}.`;
+    }else{
+      summary=String(cw.reason||'No fresh UP or DOWN alert has arrived for the current 15-minute window. The bot is waiting for the current indicator and will not reuse a previous signal.');
+    }
+    write('signal-summary',summary);
+    write('btc-price',hasDisplayedEvaluation&&hasNum(s.btc_price)?usd(s.btc_price):'—');
+    write('strike-price',hasDisplayedEvaluation&&hasNum(s.strike_price)?usd(s.strike_price):'—');
+    write('distance-strike',hasDisplayedEvaluation&&hasNum(s.distance_from_strike)?`${Number(s.distance_from_strike)>0?'+':Number(s.distance_from_strike)<0?'−':''}$${Math.abs(Number(s.distance_from_strike)).toFixed(2)}`:'—');
+    write('seconds-remaining',hasDisplayedEvaluation&&hasNum(s.seconds_remaining)?`${Math.round(Number(s.seconds_remaining))} sec at evaluation`:'—');
+    write('entry-ask',hasDisplayedEvaluation?cents(s.entry_ask_cents):'—');
+    write('max-entry-cents',hasDisplayedEvaluation?cents(data.risk?.configured_hard_max_entry_cents??s.max_entry_cents):cents(data.risk?.configured_hard_max_entry_cents));
+    write('evidence-score',score===null?'Not available':`${nfmt(score,0)} / 100`);
+    if($('score-bar')) $('score-bar').style.width=`${score===null?0:score}%`;
+    write('score-note',score===null?'No directional score recorded':`Rule score captured at evaluation; ${isHistorical?'historical only · ':''}configured internal threshold ${threshold}/100`);
+    const modelProbability=hasDisplayedEvaluation?(s.win_probability_percent??s.win_probability??s.estimated_probability_percent??null):null;
+    write('model-probability',hasNum(modelProbability)?`${nfmt(modelProbability,1)}%`:'Not calibrated');
+    const marketP=hasDisplayedEvaluation&&hasNum(s.entry_ask_cents)?Math.max(0,Math.min(100,Number(s.entry_ask_cents))):null;
+    write('market-probability',marketP===null?'—':`~${nfmt(marketP,0)}%`);
+    write('market-probability-help',marketP===null?'No valid directional entry ask is recorded for this display.':`Price approximation from the ${isHistorical?'historical ':'signal-time '}entry ask (${cents(s.entry_ask_cents)}); not the bot’s forecast and before fee effects.`);
+    write('historical-probability',hasNum(stats.win_rate_percent)?`${nfmt(stats.win_rate_percent,1)}%`:'Not enough data');
+    write('historical-probability-help',`${stats.wins||0} wins from ${stats.settled_trades||0} settled trades; all settled trades mixed together.`);
+    write('score-probability-note',hasNum(modelProbability)?'Model probability is displayed as supplied with the saved record; it is not a guarantee.':'The bot does not currently provide a calibrated per-signal win probability. The score is not probability; historical win rate summarizes previous settled trades.');
+
+    const decisionText=hasCurrentEvaluation?side:(currentAlert?`${side} alert received — evaluation pending`:isHistorical?`${side} · historical proposal${decisionStatus?` (${decisionStatus})`:''}`:waitingLabel);
+    write('decision-current',decisionText);
+    write('decision-age',hasDisplayedEvaluation?age(ageSeconds):(currentAlert&&alertAge!==null?age(alertAge):'No fresh current alert'));
+    write('decision-score',score===null?'Not available':`${nfmt(score,0)}/100`);
+    setBadge('decision-badge',hasCurrentEvaluation?'Current signal analyzed':currentAlert?'Evaluation pending':isHistorical?'Historical details retained':waitingLabel,hasCurrentEvaluation?'blue':currentAlert?'green':isHistorical?'amber':'amber');
+    setList('signal-reasons',hasDisplayedEvaluation?(Array.isArray(s.reasons)?s.reasons.map(formatReason):[]):[],hasDisplayedEvaluation?'No reasons were recorded.':currentAlertPending?'Current alert received; waiting for evaluation details.':currentAlert?'Worker status was recorded; matching evaluation reasons are unavailable in the dashboard response.':'No directional evaluation has been recorded yet.');
+    setList('signal-warnings',hasDisplayedEvaluation?(s.warnings||[]):[],hasDisplayedEvaluation?'No warnings were recorded.':currentAlertPending?'Current evaluation warnings will appear when available.':currentAlert?'The worker status is available, but no matching evaluation warnings were returned.':'No directional-evaluation warnings are available yet.');
+    if(hasCurrentEvaluation) write('decision-summary',s.disclaimer||'Current-window evaluation; not a measured probability of winning.');
+    else if(currentAlertPending) write('decision-summary','Fresh alert received for this window; its evaluation is pending. Historical details remain separate.');
+    else if(currentAlert) write('decision-summary',`Worker status: ${String(cw.processing_status||'processed').replaceAll('_',' ')}. ${cw.processing_note||'No matching detailed evaluation was returned.'}`);
+    else if(isHistorical) write('decision-summary',`${s.disclaimer||'Stored decision context.'} This signal is historical and is not being reused as a new entry.`);
+    else write('decision-summary','No current or historical directional details are available yet.');
+    renderStrategies(hasDisplayedEvaluation?(s.strategies||{}):{});
+    write('advanced-json',JSON.stringify({
+      current_window:{phase:cw.phase,status:cw.status,direction:currentAlert?cw.direction:null,window_start:cw.window_start,window_end:cw.window_end,alert_age_seconds:currentAlert?cw.alert_age_seconds:null},
+      current_evaluation:hasCurrentEvaluation?{direction:s.direction,score:s.score,age_seconds:s.age_seconds,is_stale:s.is_stale}:null,
+      latest_directional_signal:hasDisplayedEvaluation?{direction:s.direction,score:s.score,age_seconds:s.age_seconds,is_stale:s.is_stale,decision_status:s.decision_status,entry_ask_cents:s.entry_ask_cents,market_ticker:s.market_ticker}:null,
+      strategies:hasDisplayedEvaluation?(s.strategies||{}):{},warnings:hasDisplayedEvaluation?(s.warnings||[]):[]
+    },null,2));
+  }
+
+  let nextSignalCountdownState={phase:'',capturedAt:0,responseRemaining:null,windowEndMs:NaN,windowStart:null,direction:'',alertAge:null,maxAge:300,reason:'',waitingForPrice:false,selectedDirection:'',entryAsk:null,targetAsk:null};
+  function configureNextSignalCountdown(cw,dataForCountdown={}){
+    cw=cw||{};
+    const phase=String(cw.phase||'');
+    const grace=hasNum(cw.indicator_response_grace_seconds)?Number(cw.indicator_response_grace_seconds):180;
+    const responseRemaining=hasNum(cw.indicator_grace_remaining_seconds)?Number(cw.indicator_grace_remaining_seconds):
+      (hasNum(cw.window_elapsed_seconds)?Math.max(0,grace-Number(cw.window_elapsed_seconds)):null);
+    const windowEndMs=cw.window_end?Date.parse(cw.window_end):NaN;
+    nextSignalCountdownState={phase,capturedAt:Date.now(),responseRemaining:responseRemaining===null?null:Math.max(0,responseRemaining),
+      windowEndMs,windowStart:cw.window_start||null,direction:direction(cw.direction),
+      alertAge:hasNum(cw.alert_age_seconds)?Number(cw.alert_age_seconds):null,reason:String(cw.reason||'')};
+    const latest=dataForCountdown.latest_directional_signal||{};
+    const start=cw.window_start?Date.parse(cw.window_start):NaN, end=cw.window_end?Date.parse(cw.window_end):NaN;
+    const created=latest.created_at?Date.parse(latest.created_at):NaN;
+    const latestSide=direction(latest.proposed_direction||latest.direction);
+    const matching=Number.isFinite(created)&&(!Number.isFinite(start)||created>=start)&&(!Number.isFinite(end)||created<end)&&
+      latestSide===direction(cw.direction);
+    const latestStatus=String(latest.decision_status||'').toLowerCase();
+    const waitingForPrice=phase==='signal_received'&&matching&&!latest.is_stale&&latestStatus==='wait_for_better_price'&&
+      ['BUY UP','BUY DOWN'].includes(latestSide)&&hasNum(cw.alert_age_seconds)&&
+      Number(cw.alert_age_seconds)<=(hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300);
+    nextSignalCountdownState.waitingForPrice=waitingForPrice;
+    nextSignalCountdownState.selectedDirection=latestSide;
+    nextSignalCountdownState.maxAge=hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300;
+    nextSignalCountdownState.entryAsk=hasNum(latest.entry_ask_cents)?Number(latest.entry_ask_cents):null;
+    nextSignalCountdownState.targetAsk=hasNum(dataForCountdown.risk?.configured_hard_max_entry_cents)?Number(dataForCountdown.risk.configured_hard_max_entry_cents):
+      (hasNum(latest.max_entry_cents)?Number(latest.max_entry_cents):null);
+    window.__btcLatestDecisionStatus=(phase==='signal_received'&&matching)?latestStatus:'';
+    updateNextSignalCountdown();
+  }
+  function nextQuarterBoundaryMs(nowMs){return (Math.floor(nowMs/900000)+1)*900000;}
+  function updateNextSignalCountdown(){
+    const panel=$('next-signal-waiting');
+    if(!panel||panel.style.display==='none') return;
+    const st=nextSignalCountdownState,now=Date.now();
+    if(st.phase==='signal_received'&&st.waitingForPrice&&['BUY UP','BUY DOWN'].includes(st.selectedDirection)&&st.alertAge!==null){
+      const elapsed=Math.max(0,(now-st.capturedAt)/1000);
+      const left=Math.max(0,Math.ceil(st.maxAge-st.alertAge-elapsed));
+      const mm=Math.floor(left/60),ss=left%60;
+      write('next-signal-countdown-label',`${st.selectedDirection} alert validity remaining`);
+      write('next-signal-countdown',`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`);
+      write('next-signal-countdown-help',left>0
+        ?`Waiting for the ${st.selectedDirection} side ask to fall to or below the hard cap ${st.targetAsk===null?'(not reported)':cents(st.targetAsk)}. Current ask: ${st.entryAsk===null?'not recorded':cents(st.entryAsk)}. The 80¢ preferred target is soft and does not block an accepted signal below the hard cap. This alert expires at the freshness/window boundary and will not be reused later.`
+        :'The alert freshness window has expired. The bot must discard it rather than reuse this direction.');
+      return;
+    }
+    if(st.phase==='signal_received'&&['BUY UP','BUY DOWN'].includes(st.direction)&&st.alertAge!==null&&st.alertAge<=300){
+      const latestStatus=String((window.__btcLatestDecisionStatus||''));
+      if(latestStatus){
+        write('next-signal-countdown-label','Next 15-minute window starts in');
+        const boundary=Number.isFinite(st.windowEndMs)&&st.windowEndMs>now?st.windowEndMs:nextQuarterBoundaryMs(now);
+        const left=Math.max(0,Math.ceil((boundary-now)/1000));
+        write('next-signal-countdown',`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`);
+        write('next-signal-countdown-help',`Current alert was already evaluated (${latestStatus.replaceAll('_',' ')}); waiting for another fresh eligible signal. This countdown is to the window boundary, not a guaranteed alert time.`);
+        return;
+      }
+      write('next-signal-countdown-label','Current signal status');
+      write('next-signal-countdown','ALERT RECEIVED');
+      write('next-signal-countdown-help',`Fresh ${st.direction} alert recorded. The worker must still complete quote, trend, freshness, spread, and risk checks.`);
+      return;
+    }
+    const elapsed=Math.max(0,(now-st.capturedAt)/1000);
+    const responseLeft=st.responseRemaining===null?null:Math.max(0,Math.ceil(st.responseRemaining-elapsed));
+    if(st.phase==='awaiting_indicator'&&responseLeft!==null&&responseLeft>0){
+      const mm=Math.floor(responseLeft/60),ss=responseLeft%60;
+      write('next-signal-countdown-label','Expected indicator response window ends in');
+      write('next-signal-countdown',`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`);
+      write('next-signal-countdown-help','The indicator may respond earlier—or may not send a signal. This is the expected response-grace countdown, not a guaranteed signal time.');
+      return;
+    }
+    const boundary=Number.isFinite(st.windowEndMs)&&st.windowEndMs>now?st.windowEndMs:nextQuarterBoundaryMs(now);
+    const seconds=Math.max(0,Math.ceil((boundary-now)/1000));
+    const mm=Math.floor(seconds/60),ss=seconds%60;
+    write('next-signal-countdown-label','Next 15-minute window starts in');
+    write('next-signal-countdown',`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`);
+    write('next-signal-countdown-help',st.phase==='indicator_wait'
+      ?'The indicator explicitly said WAIT for this window. The timer shows the next window boundary; no trade is opened from WAIT.'
+      :st.phase==='no_fresh_signal'||(st.phase==='awaiting_indicator'&&responseLeft===0)
+        ?'The expected response period has passed. A fresh valid current-window alert may still be considered before the window closes; old alerts are never reused.'
+        :'Timer shows the next 15-minute boundary. It cannot predict exactly when or whether the indicator will send another alert.');
+  }
+  function renderNextSignalWaiting(data,cw){
+    cw=cw||{};
+    const phase=String(cw.phase||'');
+    const directionNow=direction(cw.direction);
+    const hasFreshAlert=phase==='signal_received'&&['BUY UP','BUY DOWN'].includes(directionNow)&&
+      hasNum(cw.alert_age_seconds)&&Number(cw.alert_age_seconds)<=(hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300);
+    const lastEval=data.latest_directional_signal||{};
+    const windowStartMs=cw.window_start?Date.parse(cw.window_start):NaN;
+    const windowEndMs=cw.window_end?Date.parse(cw.window_end):NaN;
+    const lastEvalMs=lastEval.created_at?Date.parse(lastEval.created_at):NaN;
+    const lastSide=direction(lastEval.proposed_direction||lastEval.direction);
+    const evalInThisWindow=Number.isFinite(lastEvalMs)&&
+      (!Number.isFinite(windowStartMs)||lastEvalMs>=windowStartMs)&&
+      (!Number.isFinite(windowEndMs)||lastEvalMs<windowEndMs)&&lastSide===directionNow;
+    const evaluatedStatus=String(lastEval.decision_status||'').toLowerCase();
+    const linkedToCurrentAlert=hasNum(cw.alert_id)&&hasNum(lastEval.external_signal_id)&&Number(cw.alert_id)===Number(lastEval.external_signal_id);
+    const evaluationMatchesAlert=hasNum(cw.alert_id)&&hasNum(lastEval.external_signal_id)?linkedToCurrentAlert:evalInThisWindow;
+    const terminalAlertStatus=Boolean(cw.processed_at)||['processed','paper_opened','vetoed','skipped','ignored','wait','blocked'].includes(String(cw.processing_status||'').toLowerCase());
+    const alreadyEvaluated=hasFreshAlert&&((!lastEval.is_stale&&Boolean(evaluatedStatus)&&
+      ['BUY UP','BUY DOWN'].includes(lastSide)&&lastSide===directionNow&&evaluationMatchesAlert)||terminalAlertStatus);
+    const waitingForPrice=alreadyEvaluated&&evaluatedStatus==='wait_for_better_price';
+    const currentAsk=hasNum(lastEval.entry_ask_cents)?Number(lastEval.entry_ask_cents):null;
+    const targetAsk=hasNum(data.risk?.entry_target_max_cents)?Number(data.risk.entry_target_max_cents):
+      (hasNum(lastEval.preferred_entry_target_cents)?Number(lastEval.preferred_entry_target_cents):null);
+    const hardCapAsk=hasNum(data.risk?.configured_hard_max_entry_cents)?Number(data.risk.configured_hard_max_entry_cents):
+      (hasNum(lastEval.max_entry_cents)?Number(lastEval.max_entry_cents):null);
+    const validityLeft=hasNum(cw.alert_age_seconds)?Math.max(0,(hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300)-Number(cw.alert_age_seconds)):null;
+    let status='Waiting For Next Available Signal';
+    let summary='No paper position is open. The bot is waiting for a fresh indicator alert. No previous directional signal is reused as a new entry.';
+    let badge='Waiting for signal',badgeTone='amber';
+    if(waitingForPrice){
+      status=`${lastSide} · WAITING FOR BETTER ENTRY PRICE`;
+      const hardCap=hasNum(data.risk?.configured_hard_max_entry_cents)?Number(data.risk.configured_hard_max_entry_cents):null;
+      summary=`The indicator selected ${lastSide}. The current executable ask is ${currentAsk===null?'not available':cents(currentAsk)}${targetAsk===null?'':`; the preferred target is ${cents(targetAsk)} (soft preference)`}${hardCap===null?'':`; the hard entry cap is ${cents(hardCap)}`}. A quote above the preferred target can still enter if it is within the hard cap and all signal, market, and risk checks pass. This price-wait state applies only when the ask is above the hard cap; the alert must remain fresh and within this 15-minute window.`;
+      badge='Waiting for better price';badgeTone='amber';
+    }else if(hasFreshAlert&&!alreadyEvaluated){
+      const workerStatus=String(cw.processing_status||'queued').toLowerCase();
+      const workerNote=String(cw.processing_note||cw.reason||'').trim();
+      if(workerStatus==='waiting_for_orderbook'){
+        status=`${directionNow} · WAITING FOR KALSHI QUOTE`;
+        summary=workerNote||'The alert is queued, but the worker cannot validate the candidate-side ask from the current order book yet.';
+        badge='Waiting for quote',badgeTone='amber';
+      }else if(workerStatus==='waiting_for_market'){
+        status=`${directionNow} · WAITING FOR MARKET`;
+        summary=workerNote||'The worker has not found a currently eligible 15-minute BTC market for this alert yet.';
+        badge='Waiting for market',badgeTone='amber';
+      }else{
+        status=`${directionNow} ALERT RECEIVED · EVALUATION PENDING`;
+        summary=workerNote||'A fresh alert is registered for this 15-minute window. It is not a trade confirmation: current market quotes, trend data, entry price, spread, signal freshness, and risk checks must still pass. If this remains queued, verify the Background Worker uses PAPER_SIGNAL_SOURCE=hybrid and the same DATABASE_URL as the Web Service.';
+        badge='Alert received',badgeTone='green';
+      }
+    }else if(alreadyEvaluated){
+      summary=`The current-window ${directionNow} alert has already been evaluated (${evaluatedStatus.replaceAll('_',' ')}). No position is currently open; the bot is waiting for the next fresh eligible signal and will not reuse this alert.`;
+      badge='Signal already evaluated',badgeTone='amber';
+    }else if(phase==='indicator_wait'){
+      summary='The indicator explicitly returned WAIT for this window. No paper entry should open from that instruction; the countdown shows when the next 15-minute window begins.';
+      badge='Indicator says WAIT',badgeTone='amber';
+    }else if(phase==='no_fresh_signal'){
+      summary='The expected indicator response period passed without a fresh directional alert. The bot will not reuse an older UP/DOWN signal. A fresh valid alert may still arrive before this window closes.';
+      badge='No fresh signal',badgeTone='amber';
+    }else if(phase==='awaiting_indicator'){
+      summary='No fresh UP or DOWN alert has arrived yet. The countdown shows the remaining expected response period; it is not a promise that a signal will arrive.';
+      badge='Awaiting indicator',badgeTone='amber';
+    }
+    write('next-signal-status',status);
+    write('next-signal-summary',summary);
+    setBadge('active-position-badge',badge,badgeTone);
+    const reasons=[];
+    if(waitingForPrice){
+      reasons.push(`The current indicator direction is ${lastSide}; it is a pending entry candidate, not an open position.`);
+      const hardCap=hasNum(data.risk?.configured_hard_max_entry_cents)?Number(data.risk.configured_hard_max_entry_cents):null;
+      if(currentAsk!==null&&hardCap!==null) reasons.push(`Current ask ${cents(currentAsk)} is above the hard cap ${cents(hardCap)}; the worker will not enter at this quote.`);
+      else if(lastEval.reasons?.length) reasons.push(...lastEval.reasons.slice(0,3).map(formatReason));
+      if(validityLeft!==null) reasons.push(validityLeft>0?`The alert has approximately ${Math.ceil(validityLeft)} seconds of freshness remaining.`:'The alert freshness window has expired and it must not be reused.');
+      reasons.push('If the target is not reached while the alert remains fresh and in the same window, the alert will be skipped.');
+    }else{
+      if(cw.reason) reasons.push(String(cw.reason));
+      if(phase==='awaiting_indicator') reasons.push('The current 15-minute window has not yet recorded a fresh directional alert.');
+      else if(phase==='no_fresh_signal') reasons.push('The expected response grace period has expired without a current-window direction.');
+      else if(phase==='indicator_wait') reasons.push('The indicator explicitly told the bot to wait; this is not an entry signal.');
+      else if(phase==='signal_received') reasons.push('A fresh alert was received, but evaluation and safety checks may still be pending.');
+      if(!hasFreshAlert) reasons.push('Any older UP/DOWN evaluation is historical context only and cannot be carried into a new entry.');
+      if(phase!=='signal_received') reasons.push('No new position will open until a valid alert and all market, trend, price, spread, and risk checks pass.');
+    }
+    const latest=data.latest_signal||{};
+    if(latest.is_stale===true||latest.is_current_window===false) reasons.push('The latest saved evaluation is marked stale or outside the current window; it is not eligible as a new signal.');
+    const unique=[...new Set(reasons.filter(Boolean))];
+    setList('next-signal-reasons',unique,'Waiting for a current-window status reason from the server.');
+    write('next-signal-window-meta',`${cw.window_start&&cw.window_end?`Current window: ${time(cw.window_start)} – ${time(cw.window_end)}`:'Current window timing unavailable'}${hasNum(cw.window_elapsed_seconds)?` · elapsed ${Math.floor(Number(cw.window_elapsed_seconds)/60)}m ${Math.floor(Number(cw.window_elapsed_seconds)%60)}s`:''}${hasNum(cw.max_age_seconds)?` · maximum alert age ${nfmt(cw.max_age_seconds,0)}s`:''}${waitingForPrice?` · pending direction: ${lastSide}`:''}`);
+    configureNextSignalCountdown(cw,data);
+  }
+  function renderActivePosition(data){
+    const p=data.active_position||null;
+    const details=$('active-position-details');
+    const waiting=$('next-signal-waiting');
+    const title=$('position-context-title');
+    const desc=$('position-context-desc');
+    if(!p){
+      if(details) details.style.display='none';
+      if(waiting) waiting.style.display='block';
+      if(title) title.textContent='Waiting For Next Available Signal';
+      if(desc) desc.textContent='No paper position is open. The current wait reason, safety checks, and countdown to the expected response period or next 15-minute window are shown here.';
+      renderNextSignalWaiting(data,data.current_window_decision||{});
+      setList('active-position-reasons',[],'No open position.');
+      setList('active-position-warnings',[],'No open position.');
+      return;
+    }
+    if(details) details.style.display='block';
+    if(waiting) waiting.style.display='none';
+    if(title) title.textContent='Active paper position';
+    if(desc) desc.textContent='Open trade details and the original entry rationale stay visible here even when the current 15-minute window changes to WAIT.';
+    setBadge('active-position-badge',`OPEN · Paper trade #${p.id}`,'green');
+    write('active-position-direction',`${direction(p.direction)} · OPEN`);
+    if($('active-position-direction')) $('active-position-direction').className='value '+dirTone(p.direction);
+    write('active-position-market',p.market_ticker||'Market not reported');
+    write('active-position-entry',cents(p.entry_cents));
+    write('active-position-cost',`${money(p.entry_cost_dollars)} total simulated entry cost incl. fees`);
+    write('active-position-opened',time(p.created_at));
+    write('active-position-age',hasNum(p.age_seconds)?`Open for ${age(p.age_seconds).replace(' ago','')}`:'Position age unavailable');
+    write('active-position-contracts',p.contracts??'—');
+    write('active-position-source',String(p.entry_signal_source||'unknown').replaceAll('_',' '));
+    write('active-position-btc',hasNum(p.entry_btc_price)?usd(p.entry_btc_price):'Not recorded');
+    write('active-position-timeframe',p.timeframe||'Timeframe not recorded');
+    const sig=p.entry_signal||{};
+    const chart=sig.chart_trend_at_decision||{};
+    const bias=chart.candidate_bias||chart.trend_bias||sig.trend_bias||null;
+    const evidence=hasNum(chart.evidence_score)?chart.evidence_score:sig.trend_evidence_score;
+    write('active-position-trend',bias?String(bias).toUpperCase():'Not recorded');
+    write('active-position-score',hasNum(evidence)?`Chart evidence ${nfmt(evidence,0)}/100${hasNum(sig.trend_snapshot_age_seconds)?` · snapshot age ${nfmt(sig.trend_snapshot_age_seconds,1)}s`:''}`:'Chart evidence not stored');
+    const exitParts=[];
+    if(hasNum(p.stop_loss_cents)) exitParts.push(`fixed stop ${cents(p.stop_loss_cents)}`);
+    if(hasNum(p.take_profit_target_cents)) exitParts.push(`take-profit target ${cents(p.take_profit_target_cents)}`);
+    if(hasNum(p.trailing_stop_btc)) exitParts.push(`chart stop ${usd(p.trailing_stop_btc)} BTC`);
+    write('active-position-exits',exitParts.join(' · ')||'No fixed stop/target recorded');
+    const cw=data.current_window_decision||{};
+    const linkText=hasNum(p.entry_signal_log_id)?`linked signal #${p.entry_signal_log_id}`:'no linked signal-log id';
+    const context= p.entry_signal_context_available
+      ?`Original entry context from ${linkText}, recorded ${time(sig.created_at)}. Current window state is ${String(cw.status||'not reported').replaceAll('_',' ')}; this open position card is separate and does not treat the old entry signal as a new recommendation.`
+      :`${p.context_note||'Entry-linked reasoning was not saved for this older position.'} Current window state is ${String(cw.status||'not reported').replaceAll('_',' ')}.`;
+    write('active-position-summary',context);
+    setList('active-position-reasons',Array.isArray(sig.reasons)?sig.reasons.map(formatReason):[],p.context_note||'No entry-linked reasons were recorded.');
+    setList('active-position-warnings',Array.isArray(sig.warnings)?sig.warnings:[],'No warnings were saved with this entry evaluation.');
+  }
+  function renderStrategies(st){
+    const tf=st.multi_timeframe_trend||{},tfs=tf.timeframes||{};
+    const tfVals=Object.entries(tfs).map(([k,v])=>`${k}: ${Number(v)>0?'Bullish':Number(v)<0?'Bearish':'Mixed / neutral'}`).join('; ');
+    write('trend-tag',Number(tf.direction)>0?'Bullish':Number(tf.direction)<0?'Bearish':'Mixed / neutral');
+    write('trend-detail',tfVals||'No timeframe scores recorded.');
+    const m=st.momentum||{};write('momentum-tag',hasNum(m.rsi_1m)?`RSI ${nfmt(m.rsi_1m,1)}`:'Not available');
+    write('momentum-detail',`${Number(m.direction)>0?'Momentum favors UP.':Number(m.direction)<0?'Momentum favors DOWN.':'Momentum is neutral or mixed.'} ${hasNum(m.vwap_1m)?`1m VWAP: ${usd(m.vwap_1m)}.`:''}`);
+    const v=st.volume_confirmation||{};write('volume-tag',v.confirmed===true?'Confirmed':'Not confirmed');
+    write('volume-detail',`Recent 3-candle mean: ${nfmt(v.recent_3_mean,3)}; baseline 20-candle mean: ${nfmt(v.baseline_20_mean,3)}. Volume ${v.confirmed===true?'supports':'does not clearly confirm'} the move.`);
+    const b=st.box_theory||{};write('box-tag',String(b.state||'Not reported').replaceAll('_',' '));
+    write('box-detail',`${hasNum(b.bottom)?`Range bottom ${usd(b.bottom)}`:'Range bottom unavailable'}; ${hasNum(b.top)?`range top ${usd(b.top)}`:''}${hasNum(b.width)?`; width ${usd(b.width)}`:''}. ${Number(b.direction)>0?'UP breakout detected.':Number(b.direction)<0?'DOWN breakout detected.':'Price remains in the box or breakout is unconfirmed.'}`);
+    const ms=st.market_structure||{};write('structure-tag',ms.label||'Not reported');
+    write('structure-detail',`${hasNum(ms.older_high)?`Earlier high ${usd(ms.older_high)}; `:''}${hasNum(ms.older_low)?`earlier low ${usd(ms.older_low)}; `:''}${hasNum(ms.recent_high)?`recent high ${usd(ms.recent_high)}; `:''}${hasNum(ms.recent_low)?`recent low ${usd(ms.recent_low)}.`:''}`||'No market structure details recorded.');
+    const vol=st.volatility||{};write('volatility-tag',vol.chase_warning?'Chase warning':'No chase warning');
+    write('volatility-detail',`${hasNum(vol.three_candle_abs_move_pct)?`Absolute move over 3 candles: ${nfmt(vol.three_candle_abs_move_pct,3)}%. `:''}${hasNum(vol.recent_return_std)?`Recent return standard deviation: ${nfmt(vol.recent_return_std,6)}. `:''}${vol.chase_warning?'Large move may increase chase risk.':'No oversized-move chase warning was recorded.'}`);
+    const e=st.evidence_totals||{};write('up-points',hasNum(e.up_points)?e.up_points:'—');write('down-points',hasNum(e.down_points)?e.down_points:'—');write('net-points',hasNum(e.net_points)?e.net_points:'—');write('max-points',hasNum(e.maximum_theoretical_directional_points)?e.maximum_theoretical_directional_points:'—');
+    write('strategy-score-badge',hasNum(e.net_points)?`Internal net ${e.net_points} points`:'Evidence details');
+  }
+  function renderStrategyPerformance(d){
+    const tbody=$('strategy-performance');tbody.replaceChildren();
+    const rows=Array.isArray(d.strategy_performance)?d.strategy_performance:[];
+    const sourceLabel=(v)=>({'hybrid':'TradingView-primary hybrid','tradingview':'TradingView only','internal':'Internal strategy','internal_legacy':'Legacy auto-paper strategy','legacy_unknown':'Legacy / unknown source'})[String(v||'').toLowerCase()]||String(v||'Legacy / unknown source').replaceAll('_',' ');
+    write('strategy-performance-badge',`${rows.length} source group${rows.length===1?'':'s'}`);
+    if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=9;td.className='empty';td.textContent='No source-level trade results recorded yet.';tr.appendChild(td);tbody.appendChild(tr);return;}
+    for(const r of rows){
+      const tr=document.createElement('tr');
+      addCell(tr,sourceLabel(r.source));addCell(tr,r.total_trades??0);addCell(tr,r.settled_trades??0);
+      addCell(tr,r.wins??0,'positive');addCell(tr,r.losses??0,'negative');
+      addCell(tr,hasNum(r.win_rate_percent)?`${nfmt(r.win_rate_percent,1)}%`:'—');
+      addCell(tr,money(r.net_pnl_dollars),Number(r.net_pnl_dollars)>0?'positive':Number(r.net_pnl_dollars)<0?'negative':'');
+      addCell(tr,r.open_positions??0);addCell(tr,r.sample_note||'Descriptive only',Number(r.settled_trades)<20?'warning-text':'');
+      tbody.appendChild(tr);
+    }
+  }
+  function renderLearning(report){
+    if(!report||!report.summary){setBadge('learning-badge','Learning data unavailable','amber');write('learning-latest-summary','The post-trade learning endpoint did not return a summary.');return;}
+    const s=report.summary||{};
+    setBadge('learning-badge',`${s.trades_reviewed||0} outcome${Number(s.trades_reviewed)===1?'':'s'} reviewed`,Number(s.trades_reviewed)>=50?'blue':'amber');
+    write('learning-reviewed',s.trades_reviewed??0);
+    write('learning-results',`${s.profitable??0} / ${s.unprofitable??0} / ${s.breakeven??0}`);
+    write('learning-net-pnl',money(s.net_pnl_dollars));
+    if($('learning-net-pnl'))$('learning-net-pnl').className='value '+(Number(s.net_pnl_dollars)>0?'positive':Number(s.net_pnl_dollars)<0?'negative':'');
+    write('learning-win-rate',hasNum(s.win_rate_percent)?`${nfmt(s.win_rate_percent,1)}%`:'—');
+    const adaptive=report.adaptive_policy||{};
+    write('learning-policy',adaptive.reason||report.policy||'Learning policy status is not available.');
+    write('learning-policy-title',adaptive.enabled===false?'Adaptive target adjustment disabled':adaptive.status==='tightened'?'Entry target tightened from recent outcomes':adaptive.status==='floor_reached'?'Conservative target floor reached':'Bounded adaptive entry policy');
+    write('learning-effective-target',hasNum(adaptive.effective_target_cents)?cents(adaptive.effective_target_cents):'—');
+    write('learning-adjustment-count',adaptive.adjustment_count??0);
+    write('learning-policy-sample',`${adaptive.last_sample_count??0} reviewed · ${hasNum(adaptive.last_sample_net_pnl_cents)?signedMoneyCents(adaptive.last_sample_net_pnl_cents):'net P&L not yet available'}`);
+    const latest=report.latest_review||null;
+    if(latest){
+      const feature=latest.features||{},review=latest.review||{};
+      write('learning-latest-title',`Trade #${latest.trade_id} · ${String(latest.pnl_result||'reviewed').toUpperCase()}`);
+      write('learning-latest-summary',`${direction(latest.direction)} ${latest.market_ticker||''} at ${cents(latest.entry_cents)} · net ${signedMoneyCents(latest.pnl_cents)} · settled ${time(latest.settled_at)}. Entry chart bias: ${feature.chart_trend_bias||'unknown'}; alignment: ${feature.trend_alignment||'unknown'}; evidence ${hasNum(feature.trend_evidence_score)?nfmt(feature.trend_evidence_score,0)+'/100':'not recorded'}.`);
+      setList('learning-latest-observations',[...(review.positive_observations||[]).map(x=>`Observed positive: ${x}`),...(review.review_flags||[]).map(x=>`Review: ${x}`)],'No specific observations were generated for this trade.');
+    }else{
+      write('learning-latest-title','Waiting for a settled paper trade');
+      write('learning-latest-summary','No settled trades have been written to the learning journal yet. Historical trades are backfilled by the worker.');
+      setList('learning-latest-observations',[],'No post-trade observations available yet.');
+    }
+    const tbody=$('learning-cohorts');
+    if(tbody){
+      tbody.replaceChildren();
+      const cohorts=Array.isArray(report.cohort_rows)?report.cohort_rows:[];
+      if(!cohorts.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=9;td.className='empty';td.textContent='Cohort comparisons will appear as settled trades accumulate.';tr.appendChild(td);tbody.appendChild(tr);}
+      for(const r of cohorts){
+        const tr=document.createElement('tr');
+        addCell(tr,r.feature);addCell(tr,r.segment);addCell(tr,r.settled_trades??0);addCell(tr,r.wins??0,'positive');addCell(tr,r.losses??0,'negative');
+        addCell(tr,hasNum(r.win_rate_percent)?`${nfmt(r.win_rate_percent,1)}%`:'—');
+        addCell(tr,money(r.net_pnl_dollars),Number(r.net_pnl_dollars)>0?'positive':Number(r.net_pnl_dollars)<0?'negative':'');
+        addCell(tr,hasNum(r.average_net_pnl_cents)?signedMoneyCents(r.average_net_pnl_cents):'—');
+        addCell(tr,r.sample_note||'Descriptive only',Number(r.settled_trades)<20?'warning-text':'');
+        tbody.appendChild(tr);
+      }
+    }
+    const recent=Array.isArray(report.recent_reviews)?report.recent_reviews:[];
+    const recentTradeNotes=recent.map(r=>{
+      const review=r.review||{};const notes=[...(review.positive_observations||[]),...(review.review_flags||[])];
+      return `Trade #${r.trade_id} · ${String(r.pnl_result||'reviewed').toUpperCase()} · ${direction(r.direction)} · ${signedMoneyCents(r.pnl_cents)} — ${notes[0]||'Outcome recorded; no causal claim made.'}`;
+    });
+    const policyHistory=Array.isArray(report.policy_change_history)?report.policy_change_history:[];
+    const policyChangeNotes=policyHistory.slice(0,5).map(event=>`Policy history · ${event.event_type||'target change'} · ${cents(event.previous_target_cents)} → ${cents(event.new_target_cents)} · ${time(event.changed_at)} — ${String(event.reason||'Recorded for review.').slice(0,180)}`);
+    setList('learning-recent-reviews',[...policyChangeNotes,...recentTradeNotes],'No completed post-trade reviews or adaptive-target changes yet.');
+    const research=Array.isArray(report.research_notes)?report.research_notes:[];
+    write('learning-caution',`${research.join(' ')} ${report.important||''}`.trim());
+  }
+
+  function signedMoneyCents(v){ if(!hasNum(v)) return '—'; const n=Number(v)/100; return `${n<0?'-':''}$${Math.abs(n).toFixed(2)}`; }
+  function renderAnalyticsTable(id, rows, emptyText){
+    const tbody=$(id); if(!tbody)return; tbody.replaceChildren();
+    if(!Array.isArray(rows)||!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=6;td.className='empty';td.textContent=emptyText;tr.appendChild(td);tbody.appendChild(tr);return;}
+    rows.forEach(r=>{const tr=document.createElement('tr');const vals=[r.group,r.settled_trades,r.wins,r.losses,hasNum(r.win_rate_percent)?`${nfmt(r.win_rate_percent,1)}%`:'—',money(r.net_pnl_dollars)];vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v===null||v===undefined?'—':String(v);if(i===5)td.className=asNum(r.net_pnl_dollars)>=0?'positive':'negative';tr.appendChild(td);});tbody.appendChild(tr);});
+  }
+  function renderAnalytics(a){
+    if(!a||!a.summary){setBadge('analytics-badge','Analytics unavailable','amber');write('analytics-caution','The analytics endpoint did not return a summary.');return;}
+    const s=a.summary||{},r20=a.rolling?.last_20_settled||{},r50=a.rolling?.last_50_settled||{},cf=a.rejected_signal_counterfactuals||{},cfs=cf.summary||{},shadow=a.trend_stop_shadow_comparison||{};
+    setBadge('analytics-badge',`${s.settled_trades||0} settled trades`,(s.settled_trades||0)>=50?'blue':'amber');
+    write('analytics-settled',s.settled_trades??0);write('analytics-total',`${s.total_trades??0} total · ${s.open_positions??0} open`);
+    write('analytics-pnl',money(s.net_pnl_dollars));write('analytics-winrate',hasNum(s.win_rate_percent)?`${nfmt(s.win_rate_percent,1)}%`:'—');
+    write('analytics-winrate-interval',hasNum(s.win_rate_95_ci_low_percent)&&hasNum(s.win_rate_95_ci_high_percent)?`Approx. 95% Wilson interval: ${nfmt(s.win_rate_95_ci_low_percent,1)}–${nfmt(s.win_rate_95_ci_high_percent,1)}%; descriptive, not a forecast`:'Need settled wins/losses to estimate uncertainty');
+    write('analytics-expectancy',hasNum(s.average_net_pnl_cents_per_settled_trade)?signedMoneyCents(s.average_net_pnl_cents_per_settled_trade):'—');
+    write('analytics-profit-factor',typeof s.profit_factor==='number'?nfmt(s.profit_factor,2):s.profit_factor==='no_recorded_losses'?'No losses yet':'—');
+    write('analytics-drawdown',signedMoneyCents(-(asNum(s.max_drawdown_cents))));
+    write('analytics-last20-pnl',money(r20.net_pnl_dollars));write('analytics-last20-note',`${r20.settled_trades||0} settled · ${hasNum(r20.win_rate_percent)?nfmt(r20.win_rate_percent,1)+'% win rate':'no results'}`);
+    write('analytics-last50-pnl',money(r50.net_pnl_dollars));write('analytics-last50-note',`${r50.settled_trades||0} settled · ${hasNum(r50.win_rate_percent)?nfmt(r50.win_rate_percent,1)+'% win rate':'no results'}`);
+    write('analytics-cf-settled',cfs.settled_trades??0);write('analytics-cf-pending',`${a.rejected_signal_counterfactuals_pending??0} pending eligible reviews`);write('analytics-cf-pnl',money(cfs.net_pnl_dollars));
+    write('analytics-shadow-count',`${shadow.triggered_and_settled_count??0} trades`);
+    write('analytics-shadow-note',`Hypothetical shadow exit ${signedMoneyCents(shadow.hypothetical_exit_net_pnl_cents_sum)} vs actual P&L ${signedMoneyCents(shadow.actual_journal_net_pnl_cents_sum_for_same_trades)}; difference ${signedMoneyCents(shadow.hypothetical_minus_actual_cents_sum)}. ${shadow.note||''}`);
+    write('analytics-caution',s.sample_note||a.important||'Descriptive analysis only.');
+    renderAnalyticsTable('analysis-by-entry-price',a.by_entry_price_bucket,'No entry-price cohort data.');
+    renderAnalyticsTable('analysis-by-trend',a.by_chart_trend_alignment,'No linked chart-trend data yet.');
+    renderAnalyticsTable('analysis-by-evidence',a.by_chart_evidence_score,'No linked chart-score data yet.');
+    const cfBody=$('counterfactual-trades');if(cfBody){cfBody.replaceChildren();const rows=Array.isArray(cf.recent)?cf.recent:[];if(!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=7;td.className='empty';td.textContent='No rejected-signal counterfactuals have been settled yet.';tr.appendChild(td);cfBody.appendChild(tr);}else rows.slice(0,25).forEach(r=>{const tr=document.createElement('tr');const vals=[time(r.counterfactual_settled_at),r.market_ticker||'—',r.proposed_direction||'—',r.decision_status||'—',cents(r.entry_ask_cents),r.trend_bias||'unknown',signedMoneyCents(r.counterfactual_pnl_cents)];vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=String(v??'—');if(i===6)td.className=asNum(r.counterfactual_pnl_cents)>=0?'positive':'negative';tr.appendChild(td);});cfBody.appendChild(tr);});}
+    const decBody=$('recent-decisions');if(decBody){decBody.replaceChildren();const rows=Array.isArray(a.recent_decisions)?a.recent_decisions:[];if(!rows.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=8;td.className='empty';td.textContent='No decision audit events recorded by this version yet.';tr.appendChild(td);decBody.appendChild(tr);}else rows.slice(0,50).forEach(r=>{const tr=document.createElement('tr');const vals=[time(r.created_at),r.event_type||'—',r.decision||'—',r.market_ticker||'—',r.direction||'—',cents(r.entry_ask_cents),r.trend_bias||'—',r.reason||'—'];vals.forEach(v=>{const td=document.createElement('td');td.textContent=String(v??'—');tr.appendChild(td);});decBody.appendChild(tr);});}
+    const statuses=a.decision_event_counts?.signal_evaluations_by_status||{};write('decision-count-note',`Logged signal evaluations by status: ${Object.entries(statuses).map(([k,v])=>`${k}: ${v}`).join(' · ')||'none yet'}. ${a.important||''}`);
+  }
+  function renderTrades(d){
+    const tbody=$('trades');tbody.replaceChildren();const trades=Array.isArray(d.trades)?d.trades:[];
+    write('trade-count-badge',`Most recent ${trades.length} trades`);
+    if(!trades.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='empty';td.textContent='No paper trades recorded yet.';tr.appendChild(td);tbody.appendChild(tr);return;}
+    const sourceLabel=(v)=>({'hybrid':'Hybrid','tradingview':'TradingView','internal':'Internal','internal_legacy':'Internal (legacy)','legacy_unknown':'Legacy / unknown'})[String(v||'').toLowerCase()]||String(v||'Legacy / unknown').replaceAll('_',' ');
+    for(const t of trades){const tr=document.createElement('tr');addCell(tr,time(t.created_at));addCell(tr,t.market_ticker||'—');addCell(tr,direction(t.direction),dirTone(t.direction));addCell(tr,sourceLabel(t.entry_signal_source));addCell(tr,hasNum(t.entry_signal_score)?`${nfmt(t.entry_signal_score,0)}/100`:'Not recorded',hasNum(t.entry_signal_score)?'':'warning-text');addCell(tr,t.contracts??'—');addCell(tr,cents(t.entry_cents));addCell(tr,t.settled_at?'Settled':'Open',t.settled_at?'positive':'warning-text');addCell(tr,t.outcome?String(t.outcome).replaceAll('_',' '):'Pending');addCell(tr,t.pnl_dollars===null||t.pnl_dollars===undefined?'Not settled':money(t.pnl_dollars),hasNum(t.pnl_dollars)?(Number(t.pnl_dollars)>0?'positive':Number(t.pnl_dollars)<0?'negative':''):'');tbody.appendChild(tr);}
+  }
+  function renderAlerts(d){
+    const tbody=$('alerts');tbody.replaceChildren();const rows=Array.isArray(d.recent_external_alerts)?d.recent_external_alerts:[];
+    if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.className='empty';td.textContent='No alerts recorded.';tr.appendChild(td);tbody.appendChild(tr);}else{
+      for(const a of rows){const tr=document.createElement('tr');addCell(tr,time(a.received_at));addCell(tr,direction(a.direction),dirTone(a.direction));addCell(tr,a.symbol||'—');addCell(tr,a.timeframe||'—');addCell(tr,String(a.processing_status||'queued').replaceAll('_',' '),statusTone(a.processing_status));addCell(tr,a.processing_note||'No processing note');tbody.appendChild(tr);}
+    }
+    write('alert-count',`${d.external_alert_count??rows.length} external alerts recorded in total`);
+  }
+  function renderHealth(d){
+    const h=d.health||{},r=d.risk||{},s=d.stats||{};
+    const worker=h.worker_status||'not_observed';
+    setBadge('engine-badge',worker==='running'?'Connected':worker==='stale'?'Heartbeat stale':'Not confirmed',worker==='running'?'green':worker==='stale'?'red':'amber');
+    write('engine-status',h.api_ok?'API online':'API status unknown');
+    write('engine-updated',`Last check ${time(h.checked_at)} · database: ${h.database_backend||'unknown'}`);
+    write('worker-enabled',h.worker_enabled?'Enabled':'Not confirmed');
+    write('worker-heartbeat',hasNum(h.worker_last_seen_age_seconds)?age(h.worker_last_seen_age_seconds):'Not visible');
+    write('worker-action',h.worker_last_action||'No recent action reported');
+    write('kalshi-status',h.kalshi_api||'Status not reported');
+    write('real-orders',d.real_orders_enabled?'ENABLED — CHECK CONFIG':'Disabled');
+    if($('real-orders')) $('real-orders').className='value '+(d.real_orders_enabled?'negative':'positive');
+    write('pnl',money(s.net_pnl_dollars||0));if($('pnl'))$('pnl').className='metric '+(Number(s.net_pnl_dollars)>0?'positive':Number(s.net_pnl_dollars)<0?'negative':'');
+    write('win-rate',hasNum(s.win_rate_percent)?`${nfmt(s.win_rate_percent,1)}%`:'Not enough data');
+    write('settled-trades',s.settled_trades??0);write('wins-losses',`${s.wins??0} / ${s.losses??0}`);write('total-trades',s.total_trades??0);
+    write('max-trade',money(r.max_trade_dollars));write('daily-loss-limit',money(r.max_daily_loss_dollars));
+    write('adaptive-entry-target',hasNum(r.entry_target_max_cents)?cents(r.entry_target_max_cents):'—');
+    write('hard-entry-cap',hasNum(r.configured_hard_max_entry_cents)?cents(r.configured_hard_max_entry_cents):'—');
+    write('adaptive-entry-note',`${r.adaptive_entry_target_enabled?'Adaptive preference enabled':'Adaptive preference adjustment disabled'} · ${Number(r.adaptive_entry_target_adjustment_count||0)} automatic tightenings · ${r.adaptive_entry_target_reason||'Collecting settled hybrid trade outcomes.'} The preferred target is advisory only; an approved signal may enter above it up to the hard cap.`);
+    write('exposure',money(r.open_exposure_dollars));write('open-positions',s.open_positions??0);
+    write('next-worker-status',worker==='running'?'Worker running':worker==='stale'?'Heartbeat stale':'Worker not confirmed');
+    write('next-last-signal',d.latest_signal?.created_at?time(d.latest_signal.created_at):'No saved signal');
+    write('api-status',h.api_ok?'Healthy':'Check API');if($('api-status'))$('api-status').className='value '+(h.api_ok?'positive':'negative');
+    const webSignalSource=String(h.signal_source||'unknown').toLowerCase();
+    const workerSignalSource=String(h.worker_signal_source||'unknown').toLowerCase();
+    const signalSourceLabel=({'hybrid':'TradingView primary + internal veto checks','gainzalgo':'TradingView / GainzAlgo','internal':'Internal rules only'})[webSignalSource]||webSignalSource;
+    const workerSourceLabel=({'hybrid':'hybrid','gainzalgo':'gainzalgo','internal':'internal'})[workerSignalSource]||workerSignalSource;
+    const sourcesMismatch=workerSignalSource!=='unknown'&&webSignalSource!==workerSignalSource;
+    write('signal-source',`${signalSourceLabel} · worker: ${workerSourceLabel}${sourcesMismatch?' — MISMATCH: worker and web service settings differ':''}`);
+    if($('signal-source')) $('signal-source').classList.toggle('warning-text',sourcesMismatch);
+    write('trend-stop',h.trend_stop_enabled?(h.trend_stop_shadow_mode?'Enabled · shadow mode':'Enabled · simulated exits'):'Disabled');
+    write('worker-last-action',h.worker_last_action||'—');write('worker-last-reason',h.worker_last_reason||'—');
+    write('mode',d.mode==='SIMULATION_ONLY'?'SIMULATION ONLY':d.mode||'Unknown');write('real-orders-details',d.real_orders_enabled?'Enabled — investigate':'Disabled');write('database-backend',h.database_backend||'Unknown');
+    write('settings-max-trade',money(r.max_trade_dollars));write('settings-max-loss',money(r.max_daily_loss_dollars));write('server-updated',time(h.checked_at));
+    const updated=new Date();write('updated-pill',`Updated ${updated.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'})}`);
+    if(d.mode!=='SIMULATION_ONLY'||d.real_orders_enabled){write('paper-badge','CHECK TRADING MODE');if($('paper-badge'))$('paper-badge').className='top-pill red';}else{write('paper-badge','PAPER MODE ONLY');if($('paper-badge'))$('paper-badge').className='top-pill green';}
+  }
+  function renderTrendMonitor(d){
+    const t=d.btc_trend_monitor||null;
+    if(!t){
+      setBadge('trend-monitor-badge','No snapshot yet','amber');
+      write('trend-monitor-note','The worker has not saved a trend snapshot yet. It will appear after the next successful background-worker refresh.');
+      return;
+    }
+    const status=String(t.status||'unknown');
+    const stale=Boolean(t.is_stale);
+    setBadge('trend-monitor-badge',status==='ok'&&!stale?'Updating continuously':status==='ok'?'Trend snapshot stale':`Monitor ${status}`,status==='ok'&&!stale?'green':'amber');
+    const tf=t.timeframes||{},asof=t.candle_asof||{};
+    const trendLabel=v=>String(v||'unknown').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
+    for(const interval of ['1m','5m','15m']){
+      write(`trend-monitor-${interval}`,trendLabel(tf[interval]));
+      write(`trend-monitor-${interval}-time`,asof[interval]?`Candle timestamp ${time(asof[interval])}`:'Candle timestamp unavailable');
+    }
+    write('trend-monitor-price',hasNum(t.btc_price)?usd(t.btc_price):'—');
+    write('trend-monitor-updated',t.updated_at?`Updated ${age(t.age_seconds)} ago · ${time(t.updated_at)}`:'Last update unavailable');
+    const m=t.momentum||{};
+    write('trend-monitor-rsi',hasNum(m.rsi_1m)?nfmt(m.rsi_1m,1):'—');
+    write('trend-monitor-vwap',hasNum(m.vwap_1m)?`1-minute VWAP ${usd(m.vwap_1m)}`:'1-minute VWAP unavailable');
+    write('trend-monitor-score',hasNum(t.evidence_score)?`${t.evidence_score}/100`:'—');
+    write('trend-monitor-bias',`Chart-only bias: ${t.candidate_bias||'unknown'} · not a trade probability`);
+    write('trend-monitor-volume',t.volume_confirmation?.confirmed?'Confirmed':'Not confirmed');
+    write('trend-monitor-structure',t.market_structure?.label||'Unknown');
+    write('trend-monitor-box',t.box_theory?.state||'Unknown');
+    const calendar=t.calendar_context||{};
+    const dayType=calendar.day_type_utc||'unknown';
+    const weekday=calendar.weekday_utc||'unknown';
+    const timeBucket=calendar.utc_time_bucket||'unknown';
+    write('trend-monitor-calendar',`${dayType} · ${weekday} · ${timeBucket}`);
+    const regime=t.market_regime||{};
+    const trendRegime=String(regime.trend_regime||'unknown').replaceAll('_',' ');
+    const volatilityRegime=String(regime.volatility_regime||'unknown').replaceAll('_',' ');
+    write('trend-monitor-regime',`${trendRegime} · ${volatilityRegime}`);
+    const note=t.error?`Trend monitor issue: ${t.error}`:stale?'The last snapshot is old. The worker must refresh chart data before relying on it for pre-analysis.':(t.disclaimer||'Chart-only pre-analysis. A fresh indicator and all execution checks are still required.');
+    write('trend-monitor-note',note);
+    const ul=$('trend-monitor-warnings');if(ul){ul.replaceChildren();const warns=Array.isArray(t.warnings)?t.warnings:[];if(!warns.length){const li=document.createElement('li');li.textContent='No additional trend warnings reported.';ul.appendChild(li);}else warns.forEach(msg=>{const li=document.createElement('li');li.textContent=String(msg);ul.appendChild(li);});}
+  }
+  function renderMarketDiagnostics(diag){
+    if(!diag){setBadge('market-ready-badge','Diagnostics unavailable','amber');return;}
+    const sources=diag.sources||{},candles=(sources.btc_candles||{}).intervals||{},market=sources.kalshi_market||{};
+    for(const tf of ['1m','5m','15m']){
+      const c=candles[tf]||{};const val=c.status==='ok'&&hasNum(c.close_price)?usd(c.close_price):c.status==='ok'?'Available':'Unavailable';
+      write(`candle-${tf}`,val);write(`candle-${tf}-help`,c.status==='ok'?`Closed-candle age ${nfmt(c.age_seconds,0)}s · max ${nfmt(c.max_age_seconds,0)}s · ${c.latest_closed_candle_at||c.latest_candle_open_at||'time not reported'}`:`Status: ${c.status||'not reported'}`);
+    }
+    setBadge('market-ready-badge',diag.ready_for_evaluation?'Ready for evaluation':'Waiting on data checks',diag.ready_for_evaluation?'green':'amber');
+    write('market-ticker',market.ticker||'No market candidate');write('market-title',market.title||'Market title not reported');
+    const q=market.quotes||{};
+    write('market-quotes',`YES ${cents(q.yes_bid_cents)} / ${cents(q.yes_ask_cents)} · NO ${cents(q.no_bid_cents)} / ${cents(q.no_ask_cents)}`);
+    write('market-quote-source',`${market.quotes_valid?'Quotes valid':'Quotes not valid'} · ${market.quote_source||'source not reported'}${market.reason?` · ${market.reason}`:''}`);
+    const remaining=asNum(market.seconds_remaining,-1);write('market-close-countdown',remaining>=0?`${Math.floor(remaining/60)}m ${Math.floor(remaining%60)}s`:'—');write('market-close-time',market.close_time?`Closes ${time(market.close_time)}`:'Close time not available');
+    write('market-checked-at',clock(diag.checked_at_utc));write('market-diagnostic-cache',`Cache ${diag.cache||'unknown'}${hasNum(diag.cache_age_seconds)?` · ${nfmt(diag.cache_age_seconds,1)}s old`:''} · ${diag.mode||'mode unreported'}`);
+  }
+  let indicatorCountdownState={phase:'',remaining:null,capturedAt:0,direction:'',windowEnd:null,freshAlert:false};
+  function configureIndicatorCountdown(cw){
+    const phase=String(cw.phase||'');
+    const grace=hasNum(cw.indicator_response_grace_seconds)?Number(cw.indicator_response_grace_seconds):180;
+    let remaining=hasNum(cw.indicator_grace_remaining_seconds)?Number(cw.indicator_grace_remaining_seconds):
+      (hasNum(cw.window_elapsed_seconds)?grace-Number(cw.window_elapsed_seconds):null);
+    const maxAge=hasNum(cw.max_age_seconds)?Number(cw.max_age_seconds):300;
+    const alertAge=hasNum(cw.alert_age_seconds)?Number(cw.alert_age_seconds):null;
+    const windowStart=cw.window_start?Date.parse(cw.window_start):NaN;
+    const windowEnd=cw.window_end?Date.parse(cw.window_end):NaN;
+    const alertTime=cw.alert_received_at?Date.parse(cw.alert_received_at):NaN;
+    const alertInWindow=!(Number.isFinite(windowStart)&&Number.isFinite(windowEnd)) ||
+      (Number.isFinite(alertTime)&&alertTime>=windowStart&&alertTime<windowEnd);
+    const freshAlert=phase==='signal_received'&&alertAge!==null&&alertAge<=maxAge&&
+      ['BUY UP','BUY DOWN'].includes(direction(cw.direction))&&alertInWindow&&
+      (!Number.isFinite(windowStart)||Date.now()>=windowStart)&&(!Number.isFinite(windowEnd)||Date.now()<windowEnd);
+    indicatorCountdownState={phase,remaining:remaining===null?null:Math.max(0,remaining),capturedAt:Date.now(),direction:direction(cw.direction),windowEnd:cw.window_end||null,freshAlert};
+    updateIndicatorCountdown();
+  }
+  function updateIndicatorCountdown(){
+    const st=indicatorCountdownState;
+    if(st.phase==='signal_received'&&st.freshAlert&&['BUY UP','BUY DOWN'].includes(st.direction)){
+      write('indicator-countdown','Indicator received');
+      write('indicator-countdown-help',`Fresh ${st.direction} alert is registered for this window.`);
+      return;
+    }
+    if(st.phase==='indicator_wait'){
+      write('indicator-countdown','Indicator says WAIT');
+      write('indicator-countdown-help','The current indicator did not provide a directional entry.');
+      return;
+    }
+    if(st.remaining===null){
+      write('indicator-countdown','—');
+      write('indicator-countdown-help','Current-window indicator timing is not available.');
+      return;
+    }
+    const elapsed=Math.max(0,(Date.now()-st.capturedAt)/1000);
+    const remaining=Math.max(0,Math.ceil(st.remaining-elapsed));
+    if(st.phase==='no_fresh_signal'||(st.phase==='signal_received'&&!st.freshAlert)||remaining<=0){
+      write('indicator-countdown','00:00 · passed');
+      write('indicator-countdown-help','The 3-minute response period passed; still waiting for a fresh current-window alert.');
+    }else{
+      const mm=Math.floor(remaining/60),ss=remaining%60;
+      write('indicator-countdown',`${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`);
+      write('indicator-countdown-help','Time left in the expected indicator response period for this window.');
+    }
+  }
+  function renderCurrentWindow(d){
+    const cw=d.current_window_decision||{};
+    const label=String(cw.status||'NO CURRENT WINDOW STATUS').replaceAll('_',' ');
+    write('current-window-status',`${label}${cw.window_start&&cw.window_end?` · ${clock(cw.window_start)}–${clock(cw.window_end)}`:''}`);
+    write('current-window-reason',cw.reason||'No current-window reason was reported.');
+    const badge=cw.phase==='signal_received'?'Fresh directional alert':cw.phase==='no_fresh_signal'?'Waiting for current alert':cw.phase==='indicator_wait'?'Indicator WAIT':cw.phase==='awaiting_indicator'?'Awaiting indicator':'Monitoring';
+    setBadge('worker-state-badge',badge,cw.phase==='signal_received'?'green':cw.phase==='internal_mode'?'blue':'amber');
+    configureIndicatorCountdown(cw);
+  }
+  function renderReadinessList(containerId, checks){
+    const container=$(containerId);if(!container)return;container.replaceChildren();
+    for(const item of (Array.isArray(checks)?checks:[])){
+      const card=document.createElement('div');card.className='readiness-item';
+      const title=document.createElement('strong');title.className=item.status==='pass'||item.status==='implemented_primitives'?'readiness-pass':'readiness-blocked';
+      title.textContent=`${item.status==='pass'?'PASS':item.status==='implemented_primitives'?'PRIMITIVE ONLY':'BLOCKED'} · ${item.label||item.key||'Readiness check'}`;
+      const detail=document.createElement('p');detail.textContent=item.detail||'';card.append(title,detail);container.appendChild(card);
+    }
+  }
+  function renderMarketScan(data){
+    const counts=data?.category_counts||{};
+    const routes=data?.route_counts||{};
+    write('market-scan-total',data?.candidate_count??'—');
+    write('market-scan-btc',counts.btc_15m??0);
+    write('market-scan-research',routes.research_only??0);
+    write('market-scan-blocked',routes.blocked_unclassified??0);
+    const state=String(data?.status||'idle');
+    if(state==='running'){
+      setBadge('market-scan-badge',`SCANNING · ${nfmt(data?.pages_scanned,0)} PAGES`,'amber');
+      write('market-scan-status',`Full catalog scan in progress: ${nfmt(data?.candidate_count,0)} distinct market contracts across ${nfmt(data?.events_scanned,0)} events / ${nfmt(data?.pages_scanned,0)} pages. Official event categories are included. This is inventory only; paper decisions run in the separate autopilot panel.`);
+    }else if(state==='failed'){
+      setBadge('market-scan-badge','SCAN FAILED','red');
+      write('market-scan-status',`${data?.error_message||'The public market catalog scan failed.'} · HTTP ${data?.upstream_status_code??'—'} · page ${data?.failed_page_number??'—'} · retries ${data?.page_retries??0}. No trade was attempted; inspect this diagnostic before retrying.`);
+    }else if(state==='partial'){
+      setBadge('market-scan-badge','PARTIAL SCAN','amber');
+      write('market-scan-status',`Scanned ${nfmt(data?.candidate_count,0)} distinct market contracts from ${nfmt(data?.events_scanned,0)} events across ${nfmt(data?.pages_scanned,0)} pages, but the catalog is incomplete. ${data?.pagination_warning||''} Autopilot retries automatically when enabled. No trade was attempted by the inventory scanner.`);
+    }else if(state==='complete'){
+      setBadge('market-scan-badge',`COMPLETE · ${nfmt(data?.candidate_count,0)} MARKETS`,'green');
+      write('market-scan-status',`Complete open-event inventory from ${data?.source||'Kalshi public catalog'}: ${nfmt(data?.candidate_count,0)} distinct market contracts across ${nfmt(data?.events_scanned,0)} events / ${nfmt(data?.pages_scanned,0)} pages; showing ${nfmt(data?.returned_count,0)} examples. Completed ${time(data?.last_completed_at)}. Market-implied prices are not model probabilities. Turn on the separate autopilot toggle to analyze the ranked pool and create eligible paper entries once provider/calibration gates pass.`);
+    }else{
+      setBadge('market-scan-badge','NOT SCANNED','blue');
+      write('market-scan-status','The scanner is idle. The master autopilot toggle starts recurring catalog scans plus research-paper analysis. The manual scan button only inventories markets; it does not place orders.')
+    }
+    const rows=$('market-scan-rows');
+    if(rows){
+      rows.replaceChildren();
+      const markets=Array.isArray(data?.markets)?data.markets:[];
+      if(!markets.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=6;td.className='empty';td.textContent=state==='running'?'Inventory is being built; more market examples will appear as pages arrive.':'No market records returned. No orders were submitted.';tr.appendChild(td);rows.appendChild(tr);}
+      for(const market of markets){
+        const tr=document.createElement('tr');
+        addCell(tr,market.ticker||'—');
+        addCell(tr,market.title||'Untitled market');
+        addCell(tr,market.category_label||market.category||'Unclassified');
+        addCell(tr,hasNum(market.market_implied_yes_probability_pct)?`${nfmt(market.market_implied_yes_probability_pct,1)}%`:'Unavailable');
+        const route=String(market.route_status||'blocked_unclassified').replaceAll('_',' ').toUpperCase();
+        addCell(tr,route);
+        addCell(tr,market.context_status||market.reason||'No context source status provided.');
+        rows.appendChild(tr);
+      }
+    }
+  }
+  async function runMarketScan(){
+    const button=$('market-scan-button');
+    if(button)button.disabled=true;
+    try{
+      setBadge('market-scan-badge','STARTING SCAN','amber');
+      write('market-scan-status','Starting/resuming the background crawl of open Kalshi market pages. This can take time for a large catalog.');
+      const startResponse=await fetch('/api/market-scan',{method:'POST',cache:'no-store',headers:{'Accept':'application/json'}});
+      const startData=await startResponse.json().catch(()=>({}));
+      if(!startResponse.ok)throw new Error(startData?.detail||`/api/market-scan returned ${startResponse.status}`);
+      renderMarketScan(startData);
+      const deadline=Date.now()+10*60*1000;
+      let latest=startData;
+      while(Date.now()<deadline){
+        if(latest.status!=='running')break;
+        await new Promise(resolve=>setTimeout(resolve,1200));
+        latest=await getJSON('/api/market-scan');
+        renderMarketScan(latest);
+      }
+      if(latest.status==='running')write('market-scan-status','The catalog scan is still running in the background. You can navigate away; progress is retained on this service and will continue.');
+    }catch(err){setBadge('market-scan-badge','SCAN FAILED','red');write('market-scan-status',`Market scan could not start or retrieve progress: ${err?.message||'request failed'}. No trade was attempted.`);}
+    finally{if(button)button.disabled=false;}
+  }
+
+  function renderMarketAnalysis(data){
+    const status=String(data?.status||'idle');
+    write('market-analysis-pool',data?.candidate_pool_size??'—');
+    write('market-analysis-count',data?.analyzed_count??'—');
+    write('market-analysis-entered',data?.paper_entries_created??0);
+    const perf=data?.research_paper_performance||{};
+    write('market-analysis-winrate',hasNum(perf.win_rate_percent)?`${nfmt(perf.win_rate_percent,1)}%`:'—');
+    write('market-analysis-pnl',hasNum(perf.net_pnl_cents)?`Net ${usd(Number(perf.net_pnl_cents)/100)} · ${nfmt(perf.settled_trades||0,0)} settled`:'Separate hold-to-settlement results');
+    if(status==='running'){
+      setBadge('market-analysis-badge','ANALYZING','amber');
+      write('market-analysis-status',`Analyzing a bounded batch. Live orders: ${data?.live_orders_submitted??0}.`);
+    }else if(status==='provider_not_configured'){
+      setBadge('market-analysis-badge','MODEL PROVIDER NEEDED','amber');
+      write('market-analysis-status',data?.last_error||'No probability/evidence provider configured. The bot refuses to invent an edge or trade from market-implied odds alone.');
+    }else if(status==='failed'){
+      setBadge('market-analysis-badge','ANALYSIS FAILED','red');
+      write('market-analysis-status',data?.last_error||'Research batch failed safely; no live orders were attempted.');
+    }else if(status==='complete'){
+      setBadge('market-analysis-badge',`${nfmt(data?.analyzed_count,0)} ANALYZED`,'green');
+      write('market-analysis-status',`Last batch ${time(data?.last_run_at)} · pool ${nfmt(data?.candidate_pool_size,0)} · paper entries ${nfmt(data?.paper_entries_created,0)} · live orders ${data?.live_orders_submitted??0}.`);
+    }else{
+      setBadge('market-analysis-badge','NOT RUN','blue');
+      write('market-analysis-status',data?.last_error||'Waiting for a completed market inventory and a validated model/evidence provider.');
+    }
+    const rows=$('market-analysis-rows');if(!rows)return;rows.replaceChildren();
+    const decisions=Array.isArray(data?.decisions)?data.decisions:[];
+    if(!decisions.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=7;td.className='empty';td.textContent='No current analysis results. No trade was inferred from market-implied probability alone.';tr.appendChild(td);rows.appendChild(tr);return;}
+    for(const item of decisions){
+      const tr=document.createElement('tr');
+      addCell(tr,`${item.ticker||'—'} · ${item.title||'Untitled market'}`);
+      addCell(tr,item.category||'unclassified');
+      addCell(tr,hasNum(item.model_probability_yes_pct)?`${nfmt(item.model_probability_yes_pct,1)}%`:'Unavailable');
+      addCell(tr,`${hasNum(item.yes_ask_cents)?nfmt(item.yes_ask_cents,1)+'¢':'—'} / ${hasNum(item.no_ask_cents)?nfmt(item.no_ask_cents,1)+'¢':'—'}`);
+      addCell(tr,`${hasNum(item.yes_net_edge_cents)?nfmt(item.yes_net_edge_cents,1)+'¢':'—'} / ${hasNum(item.no_net_edge_cents)?nfmt(item.no_net_edge_cents,1)+'¢':'—'}`);
+      const decision=item.paper_trade_created?'PAPER ENTRY':(item.eligible?'EDGE CANDIDATE':(item.status||'BLOCKED')).replaceAll('_',' ').toUpperCase();
+      addCell(tr,decision);
+      const reason=Array.isArray(item.reasons)?item.reasons.join(', '):String(item.note||item.rationale||'');
+      addCell(tr,reason||'Evidence / risk checks passed.');
+      rows.appendChild(tr);
+    }
+  }
+  async function runMarketAnalysis(){
+    const button=$('market-analysis-button');if(button)button.disabled=true;
+    try{
+      setBadge('market-analysis-badge','STARTING','amber');
+      write('market-analysis-status','Requesting an authenticated research batch. This never sends live orders.');
+      const data=await credentialApi('/api/market-analysis/run','POST',{});
+      renderMarketAnalysis(data);
+    }catch(err){setBadge('market-analysis-badge','REQUEST FAILED','red');write('market-analysis-status',`Could not start analysis: ${err?.message||'request failed'}. Unlock the dashboard admin controls first.`);}
+    finally{if(button)button.disabled=false;}
+  }
+
+  function renderMarketAutomation(data){
+    const enabled=Boolean(data?.autopilot_enabled);
+    const canEnable=Boolean(data?.provider_configured&&data?.autopaper_environment_gate&&data?.paper_mode_safe);
+    const logged=Boolean(data?.admin_authenticated);
+    const badge=$('market-autopilot-badge');
+    if(badge){badge.textContent=enabled?'AUTOPILOT ON':'AUTOPILOT OFF';badge.className=enabled?'badge green':'badge amber';}
+    const button=$('market-autopilot-toggle');
+    if(button){button.setAttribute('aria-pressed',enabled?'true':'false');button.textContent=enabled?'Pause autopilot':'Start autopilot';button.disabled=!logged||(!enabled&&!canEnable);button.title=!logged?'Unlock the dashboard admin controls first':(enabled?'Pause new automatic scans and research paper entries':(canEnable?'Start automatic market scan and eligible paper research trades':'Configure the model/evidence provider, set MARKET_AUTOPAPER_ENABLED=true, and keep paper mode safe first'));}
+    let message=data?.note||'Autopilot state loaded.';
+    if(!logged&&!enabled)message='Unlock secure controls inside “Connect Kalshi account” to start autopilot. It can only create eligible research paper entries, never live orders.';
+    if(enabled)message='Automatic catalog scanning and scheduled research are enabled. Eligible opportunities may create segregated paper research entries only; no live orders are sent.';
+    else if(!data?.provider_configured)message='Off: configure and validate the HTTPS model/evidence provider first. No probability is invented and no automatic research trades are created.';
+    else if(!data?.autopaper_environment_gate)message='Off: MARKET_AUTOPAPER_ENABLED must be true as an environment safety gate before dashboard autopilot can create paper research entries.';
+    else if(!data?.paper_mode_safe)message='Off: set TRADING_MODE=paper and LIVE_TRADING_ENABLED=false before enabling the automated paper pipeline.';
+    write('market-autopilot-status',message);
+  }
+  async function toggleMarketAutomation(){
+    const button=$('market-autopilot-toggle');if(button)button.disabled=true;
+    try{
+      const current=await getJSON('/api/market-automation');
+      const enabled=!Boolean(current.autopilot_enabled);
+      if(enabled&&!current.admin_authenticated){write('market-autopilot-status','Unlock secure controls inside “Connect Kalshi account” first.');return;}
+      if(enabled&&!current.provider_configured){write('market-autopilot-status','Cannot start: the HTTPS probability/evidence provider is not configured.');return;}
+      if(enabled&&!current.autopaper_environment_gate){write('market-autopilot-status','Cannot start: set MARKET_AUTOPAPER_ENABLED=true after validating the provider and the separate research paper journal.');return;}
+      if(enabled&&!current.paper_mode_safe){write('market-autopilot-status','Cannot start: safe paper-mode deployment settings are required.');return;}
+      const result=await credentialApi('/api/market-automation','POST',{enabled});
+      renderMarketAutomation(result);
+      await refresh();
+    }catch(err){write('market-autopilot-status',`Automation toggle failed closed: ${err?.message||'request failed'}. No live orders are possible from this control.`);}
+    finally{if(button){const state=await getJSON('/api/market-automation').catch(()=>null);if(state)renderMarketAutomation(state);}}
+  }
+  function renderTradingMode(status, liveReady, multiUser){
+    const safePaper=Boolean(status?.paper_execution_enabled)&&status?.effective_mode==='paper';
+    const paper=$('mode-paper'),real=$('mode-real');
+    if(paper){paper.setAttribute('aria-pressed',safePaper?'true':'false');paper.classList.toggle('active',safePaper);}
+    if(real){real.setAttribute('aria-pressed','false');real.dataset.locked='true';}
+    const badge=$('mode-state-badge');if(badge){badge.textContent=safePaper?'PAPER MODE ACTIVE':'MODE BLOCKED';badge.className=safePaper?'badge green':'badge wait';}
+    write('mode-api-status',safePaper?'Server confirms paper-only configuration':'Configuration mismatch · worker should be stopped');
+    const blockers=Array.isArray(status?.live_blockers)?status.live_blockers:[];
+    write('mode-control-status',safePaper?`Paper trading is active. Real trading remains locked server-side. ${blockers[0]||''}`:'The server reports an unsafe mode configuration. Correct TRADING_MODE=paper and LIVE_TRADING_ENABLED=false in deployment settings before continuing.');
+    renderReadinessList('live-readiness-list',liveReady?.checks||[]);
+    renderReadinessList('multi-user-readiness-list',multiUser?.checks||[]);
+    write('multi-user-summary',multiUser?.decision||'Multi-user readiness is unavailable.');
+  }
+  async function selectTradingMode(mode){
+    if(mode==='paper'){
+      try{const status=await getJSON('/api/trading-mode');renderTradingMode(status,await getJSON('/api/live-readiness'),await getJSON('/api/multi-user-readiness'));write('mode-control-status','Paper is the current mode. This browser control does not modify deployment environment settings; the server remains paper-only.');}
+      catch(err){write('mode-control-status',`Could not verify paper-mode state: ${err?.message||'request failed'}`);}
+      return;
+    }
+    const status=$('mode-control-status');if(status)status.textContent='Requesting the server-side real-trading readiness gate…';
+    try{
+      const response=await fetch('/api/trading-mode',{method:'POST',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({requested_mode:'real'})});
+      const payload=await response.json().catch(()=>({}));
+      const detail=payload.detail||payload;
+      if(!response.ok){
+        const blockers=Array.isArray(detail.live_blockers)?detail.live_blockers:[];
+        if(status)status.textContent=`REAL TRADING LOCKED (HTTP ${response.status}). ${detail.message||'Readiness gate denied the request.'} ${blockers.slice(0,3).join(' ')}`;
+      }else if(status){status.textContent='The current build cannot activate real trading. Keep paper mode selected.';}
+      const [modeStatus,readiness,multiUser]=await Promise.all([getJSON('/api/trading-mode'),getJSON('/api/live-readiness'),getJSON('/api/multi-user-readiness')]);
+      renderTradingMode(modeStatus,readiness,multiUser);
+      if(status&& !response.ok){const blockers=Array.isArray(detail.live_blockers)?detail.live_blockers:[];status.textContent=`REAL TRADING LOCKED (HTTP ${response.status}). ${detail.message||'Readiness gate denied the request.'} ${blockers.slice(0,3).join(' ')}`;}
+    }catch(err){if(status)status.textContent=`Real-trading readiness could not be checked. The server-side safety lock remains in force. ${err?.message||''}`;}
+  }
+  async function getJSON(url){const response=await fetch(url,{cache:'no-store',headers:{'Accept':'application/json'}});if(!response.ok)throw new Error(`${url} returned ${response.status}`);return response.json();}
+  async function refresh(){
+    const [dashboardResult,diagResult,analyticsResult,learningResult,modeResult,liveReadyResult,multiUserResult,marketScanResult,marketAnalysisResult,marketAutomationResult]=await Promise.allSettled([
+      getJSON('/api/dashboard'), getJSON('/diagnostics/market-data'), getJSON('/api/analytics'), getJSON('/api/learning'),
+      getJSON('/api/trading-mode'),getJSON('/api/live-readiness'),getJSON('/api/multi-user-readiness'),getJSON('/api/market-scan'),getJSON('/api/market-analysis'),getJSON('/api/market-automation')
+    ]);
+    if(marketScanResult.status==='fulfilled'){try{renderMarketScan(marketScanResult.value);}catch(err){console.error('[BTC dashboard] market scan panel failed',err);}}
+    if(marketAnalysisResult.status==='fulfilled'){try{renderMarketAnalysis(marketAnalysisResult.value);}catch(err){console.error('[BTC dashboard] market analysis panel failed',err);}}
+    if(marketAutomationResult.status==='fulfilled'){try{renderMarketAutomation(marketAutomationResult.value);}catch(err){console.error('[BTC dashboard] market automation panel failed',err);}}
+    if(modeResult.status==='fulfilled'&&liveReadyResult.status==='fulfilled'&&multiUserResult.status==='fulfilled'){
+      try{renderTradingMode(modeResult.value,liveReadyResult.value,multiUserResult.value);}catch(err){console.error('[BTC dashboard] trading mode panel failed',err);}
+    }else{write('mode-api-status','Mode/readiness check unavailable; live trading remains unavailable by default.');}
+    if(dashboardResult.status!=='fulfilled'){
+      const err=dashboardResult.reason;
+      setBadge('connection-badge','Dashboard connection issue','red');
+      write('last-refresh',`Dashboard API request failed: ${err?.message||'unknown error'}. The last good display is retained; check the web service/API response.`);
+      console.error('[BTC dashboard] /api/dashboard request failed', err);
+      if(diagResult.status==='fulfilled'){
+        try{renderMarketDiagnostics(diagResult.value);}catch(renderErr){console.error('[BTC dashboard] diagnostics rendering failed',renderErr);}
+      }
+      if(analyticsResult.status==='fulfilled'){
+        try{renderAnalytics(analyticsResult.value);}catch(renderErr){console.error('[BTC dashboard] analytics rendering failed',renderErr);}
+      }
+      if(learningResult.status==='fulfilled'){
+        try{renderLearning(learningResult.value);}catch(renderErr){console.error('[BTC dashboard] learning panel failed',renderErr);}
+      }
+      return;
+    }
+
+    // An HTTP/API success is separate from a failure in any one display panel.
+    // Previously a rendering exception after the health card updated could leave
+    // perfectly good API data on screen with a misleading connection-error badge.
+    const data=dashboardResult.value;
+    setBadge('connection-badge','API connected','green');
+    const renderFailures=[];
+    const safeRender=(name,fn)=>{
+      try{fn();}
+      catch(err){
+        renderFailures.push(name);
+        console.error(`[BTC dashboard] ${name} panel failed to render`,err);
+      }
+    };
+    safeRender('engine status',()=>renderHealth(data));
+    safeRender('signal evaluation',()=>renderSignal(data,data.stats||{}));
+    safeRender('current window',()=>renderCurrentWindow(data));
+    safeRender('active position',()=>renderActivePosition(data));
+    safeRender('trend monitor',()=>renderTrendMonitor(data));
+    safeRender('strategy performance',()=>renderStrategyPerformance(data));
+    safeRender('trade journal',()=>renderTrades(data));
+    safeRender('external alerts',()=>renderAlerts(data));
+
+    if(diagResult.status==='fulfilled'){
+      safeRender('market diagnostics',()=>renderMarketDiagnostics(diagResult.value));
+    }else{
+      setBadge('market-ready-badge','Diagnostics unavailable','amber');
+      write('market-diagnostic-cache',diagResult.reason?.message||'Could not load diagnostic endpoint.');
+    }
+    if(analyticsResult.status==='fulfilled'){
+      safeRender('analytics',()=>renderAnalytics(analyticsResult.value));
+    }else{
+      setBadge('analytics-badge','Analytics unavailable','amber');
+      write('analytics-caution',analyticsResult.reason?.message||'Could not load analytics.');
+    }
+    if(learningResult.status==='fulfilled'){
+      safeRender('learning feedback',()=>renderLearning(learningResult.value));
+    }else{
+      setBadge('learning-badge','Learning data unavailable','amber');
+      write('learning-latest-summary',learningResult.reason?.message||'Could not load the post-trade feedback endpoint.');
+    }
+
+    if(renderFailures.length){
+      const labels=renderFailures.join(', ');
+      setBadge('connection-badge',`API connected · display warning (${renderFailures.length})`,'amber');
+      const connectionBadge=$('connection-badge');
+      if(connectionBadge){connectionBadge.title=`API is reachable. Dashboard panel(s) failed to render: ${labels}. Scroll to Last refresh for details and check the browser console.`;connectionBadge.setAttribute('aria-label',connectionBadge.title);}
+      write('last-refresh',`API connected at ${new Date().toLocaleTimeString()}, but these panel(s) failed to render: ${labels}. Other sections remain refreshed. Open browser console for details.`);
+    }else{
+      setBadge('connection-badge','Dashboard connected','green');
+      const connectionBadge=$('connection-badge');
+      if(connectionBadge){connectionBadge.title='API and dashboard panels refreshed successfully.';connectionBadge.setAttribute('aria-label',connectionBadge.title);}
+      write('last-refresh',`Last refreshed ${new Date().toLocaleTimeString()}. Automatic refresh every 5 seconds.`);
+    }
+  }
+  async function credentialApi(url,method='GET',body){
+    const options={method,cache:'no-store',credentials:'same-origin',headers:{'Accept':'application/json'}};
+    if(body!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body);}
+    const response=await fetch(url,options);const payload=await response.json().catch(()=>({}));
+    if(!response.ok){const detail=payload?.detail;throw new Error(typeof detail==='string'?detail:`Request failed (HTTP ${response.status}).`);}
+    return payload;
+  }
+  async function refreshAdminControls(){
+    const sess=await credentialApi('/api/admin/session');
+    const logged=Boolean(sess.authenticated);
+    const login=$('admin-login-controls'),controls=$('kalshi-admin-controls');
+    if(login)login.hidden=logged;if(controls)controls.hidden=!logged;
+    const researchButton=$('market-analysis-button');if(researchButton){researchButton.disabled=!logged;researchButton.textContent=logged?'Run research batch':'Run research batch · unlock admin first';}
+    const automationButton=$('market-autopilot-toggle');if(automationButton&&!logged){const state=await getJSON('/api/market-automation').catch(()=>null);if(!state?.autopilot_enabled)automationButton.disabled=true;}
+    write('admin-session-status',sess.admin_secret_configured?'Admin controls are locked until authenticated.':'Credential vault unavailable: set KALSHI_VAULT_ADMIN_SECRET (at least 32 random characters) on the Web Service.');
+    if(logged){
+      const saved=await credentialApi('/api/kalshi-credentials');
+      const env=String($('kalshi-cred-environment')?.value||'demo');
+      const item=saved.configured_environments?.[env];
+      write('kalshi-credential-status',`Saved Demo: ${saved.demo_configured?'yes':'no'} · Production: ${saved.production_configured?'yes':'no'}. Selected ${env}: ${item?`configured (${item.key_id_hint}), updated ${time(item.updated_at)}`:'not saved'}. Private keys are never returned.`);
+    }
+  }
+  $('admin-login-button')?.addEventListener('click',async()=>{
+    const input=$('admin-secret-input');const secret=String(input?.value||'');
+    try{await credentialApi('/api/admin/login','POST',{secret});if(input)input.value='';await refreshAdminControls();}
+    catch(err){write('admin-session-status',`Unlock failed: ${err?.message||'request failed'}`);}
+  });
+  $('admin-logout-button')?.addEventListener('click',async()=>{
+    try{await credentialApi('/api/admin/logout','POST',{});await refreshAdminControls();}
+    catch(err){write('admin-session-status',`Lock request failed: ${err?.message||'request failed'}`);}
+  });
+  $('kalshi-cred-environment')?.addEventListener('change',()=>{refreshAdminControls().catch(err=>write('kalshi-credential-status',err?.message||'Unable to load credential status.'));});
+  $('kalshi-save-credentials')?.addEventListener('click',async()=>{
+    const button=$('kalshi-save-credentials');
+    const environment=String($('kalshi-cred-environment')?.value||'demo');
+    const keyId=String($('kalshi-api-key-id')?.value||'');
+    const file=$('kalshi-private-key-file')?.files?.[0];
+    const acknowledged=Boolean($('kalshi-authorization-ack')?.checked);
+    if(!acknowledged){write('kalshi-credential-status','Please read and acknowledge the account-access and risk notice before connecting.');return;}
+    if(!keyId.trim()||!file){write('kalshi-credential-status','Enter the API Key ID and choose the matching private-key file.');return;}
+    const filename=String(file.name||'').toLowerCase();
+    if(!/\.(key|pem|txt)$/.test(filename)){write('kalshi-credential-status','Choose a .key, .pem, or .txt private-key file.');return;}
+    if(file.size<100||file.size>16000){write('kalshi-credential-status','Private-key file must be between 100 bytes and 16 KB.');return;}
+    if(button){button.disabled=true;button.textContent='Connecting securely…';}
+    try{
+      const pem=await file.text();
+      if(!pem.includes('-----BEGIN')||!pem.includes('PRIVATE KEY-----'))throw new Error('The selected file does not look like a PEM private key. Choose the original matching private key file.');
+      const saved=await credentialApi('/api/kalshi-credentials','PUT',{environment,api_key_id:keyId,private_key_pem:pem});
+      $('kalshi-api-key-id').value='';$('kalshi-private-key-file').value='';
+      write('kalshi-credential-status',`Key pair saved and encrypted (${saved.key_id_hint}). Checking credentials with a read-only request…`);
+      try{
+        const result=await credentialApi('/api/kalshi-credentials/verify','POST',{environment});
+        const balance=hasNum(result.balance_cents)?usd(Number(result.balance_cents)/100):'not returned';
+        write('kalshi-credential-status',`Connected: ${environment} key verified by read-only balance request (${balance}). Credentials are encrypted at rest. No orders were placed; live execution remains locked.`);
+      }catch(verifyErr){
+        write('kalshi-credential-status',`Key pair saved encrypted (${saved.key_id_hint}), but read-only verification failed: ${verifyErr?.message||'request failed'}. Check that the Key ID and file match the selected environment, then choose “Verify saved key” to retry. No orders were placed.`);
+      }
+      const finalStatus=String($('kalshi-credential-status')?.textContent||'Credentials processed.');
+      await refreshAdminControls();
+      write('kalshi-credential-status',finalStatus);
+    }catch(err){write('kalshi-credential-status',`Connection failed: ${err?.message||'request failed'}`);}
+    finally{if(button){button.disabled=false;button.textContent='Connect Kalshi account';}}
+  });
+  $('kalshi-verify-credentials')?.addEventListener('click',async()=>{
+    const environment=String($('kalshi-cred-environment')?.value||'demo');
+    try{const result=await credentialApi('/api/kalshi-credentials/verify','POST',{environment});
+      const balance=hasNum(result.balance_cents)?usd(Number(result.balance_cents)/100):'not returned';
+      write('kalshi-credential-status',`${environment} credentials verified with a read-only balance request. Balance: ${balance}. Orders placed: no.`);
+    }catch(err){write('kalshi-credential-status',`Read-only verification failed: ${err?.message||'request failed'}`);}
+  });
+  $('kalshi-clear-credentials')?.addEventListener('click',async()=>{
+    const environment=String($('kalshi-cred-environment')?.value||'demo');
+    if(!window.confirm(`Delete the saved ${environment} key pair from the encrypted vault?`))return;
+    try{await credentialApi(`/api/kalshi-credentials/${encodeURIComponent(environment)}`,'DELETE');await refreshAdminControls();}
+    catch(err){write('kalshi-credential-status',`Delete failed: ${err?.message||'request failed'}`);}
+  });
+  refreshAdminControls().catch(()=>{});
+  $('mode-paper')?.addEventListener('click',()=>selectTradingMode('paper'));
+  $('market-scan-button')?.addEventListener('click',runMarketScan);
+  $('market-analysis-button')?.addEventListener('click',runMarketAnalysis);
+  $('market-autopilot-toggle')?.addEventListener('click',toggleMarketAutomation);
+  $('mode-real')?.addEventListener('click',()=>selectTradingMode('real'));
+  refresh();window.setInterval(refresh,5000);window.setInterval(updateIndicatorCountdown,1000);window.setInterval(updateNextSignalCountdown,1000);
+})();
+</script>
+</body>
+</html>
